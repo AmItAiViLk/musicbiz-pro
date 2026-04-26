@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MusicBiz Pro - כניסה</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: system-ui; background: #f3f4f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 1rem; shadow: 0 10px 15px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
+        button { background: #4285F4; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="card" id="app">
+        <h1>MusicBiz Pro</h1>
+        <p>טוען מערכת...</p>
+    </div>
+
+    <script>
+        // הכנס כאן את הנתונים שלך מסופאבייס (Project Settings -> API)
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function checkUser() {
+            const { data: { session } } = await supabase.auth.getSession();
+            const appDiv = document.getElementById('app');
+
+            if (session) {
+                appDiv.innerHTML = `
+                    <h1>שלום, ${session.user.user_metadata.full_name || 'מורה'} 🎸</h1>
+                    <p>המערכת מחוברת בהצלחה ליומן גוגל שלך.</p>
+                    <button onclick="supabase.auth.signOut().then(() => location.reload())" style="background:red">התנתק</button>
+                `;
+            } else {
+                appDiv.innerHTML = `
+                    <h1>MusicBiz Pro</h1>
+                    <p>נהל את הסטודיו שלך בקלות</p>
+                    <button onclick="login()">התחבר עם Google</button>
+                `;
+            }
+        }
+
+        async function login() {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
+        }
+
+        checkUser();
+    </script>
+</body>
+</html>
