@@ -9,8 +9,6 @@
         body { font-family: system-ui; background: #f3f4f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 15px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
         button { background: #4285F4; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 20px; }
-        h1 { color: #1f2937; margin: 0; }
-        p { color: #6b7280; }
     </style>
 </head>
 <body>
@@ -20,11 +18,9 @@
     </div>
 
     <script>
-        // המפתחות שלך - כבר בפנים!
         const SUPABASE_URL = 'https://tyckebaxdgqscxbpilqm.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_Te8gsHEkOK7P0HGZABg4uw_Vh_CRzBD';
         
-        // יצירת חיבור לסופאבייס
         const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function checkUser() {
@@ -34,7 +30,7 @@
             if (session) {
                 appDiv.innerHTML = `
                     <h1>שלום, ${session.user.user_metadata.full_name || 'מורה'} 🎸</h1>
-                    <p>המערכת מחוברת. אנחנו מוכנים לנהל את הסטודיו.</p>
+                    <p>המערכת מחוברת בהצלחה.</p>
                     <button onclick="logout()" style="background:#ef4444">התנתק</button>
                 `;
             } else {
@@ -49,7 +45,7 @@
         async function login() {
             await sbClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.href }
+                options: { redirectTo: window.location.origin }
             });
         }
 
