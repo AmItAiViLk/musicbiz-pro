@@ -18,5 +18,6 @@ CREATE INDEX IF NOT EXISTS idx_availability_user_day
 
 ALTER TABLE teacher_availability ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "owner_all" ON teacher_availability
+DROP POLICY IF EXISTS "owner_all" ON teacher_availability;
+CREATE POLICY "owner_all" ON teacher_availability
   FOR ALL USING (auth.uid() = user_id);

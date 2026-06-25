@@ -17,14 +17,14 @@ CREATE TABLE IF NOT EXISTS reschedule_requests (
   status           text        NOT NULL DEFAULT 'pending_selection',
   -- 'pending_selection' | 'pending_approval' | 'approved' | 'rejected'
   created_at       timestamptz DEFAULT now(),
-  updated_at       timestamptz DEFAULT now(),
-
-  -- One active request per student per teacher at a time
-  CONSTRAINT reschedule_requests_active_unique
-    UNIQUE NULLS NOT DISTINCT (user_id, student_phone, status)
-    -- NOTE: only enforces uniqueness when status = 'pending_selection'
-    -- Use upsert with onConflict in the Edge Function
+  updated_at       timestamptz DEFAULT now()
 );
+
+-- Only one *active* (pending_selection) request per teacher+student at a time.
+-- Completed (approved/rejected) rows remain in history without blocking new requests.
+CREATE UNIQUE INDEX IF NOT EXISTS reschedule_requests_active_unique
+  ON reschedule_requests (user_id, student_phone)
+  WHERE status = 'pending_selection';
 
 -- Indexes for fast webhook lookups
 CREATE INDEX IF NOT EXISTS idx_reschedule_user_status
@@ -36,5 +36,6 @@ CREATE INDEX IF NOT EXISTS idx_reschedule_student_phone
 -- 3. RLS — only the owning teacher can read their own requests
 ALTER TABLE reschedule_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "owner_all" ON reschedule_requests
+DROP POLICY IF EXISTS "owner_all" ON reschedule_requests;
+CREATE POLICY "owner_all" ON reschedule_requests
   FOR ALL USING (auth.uid() = user_id);
