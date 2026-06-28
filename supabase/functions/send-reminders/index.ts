@@ -174,6 +174,11 @@ Deno.serve(async (req: Request) => {
             const msg = `reminder failed for student ${student.id} (${target.role}): ${(err as Error).message}`;
             console.error(msg);
             errors.push(msg);
+            await supabase.from("tempo_automation_logs").insert({
+              student_identifier: student.name,
+              action_type: "reminder_error",
+              raw_data: msg,
+            });
           }
         }
       }
@@ -207,6 +212,11 @@ Deno.serve(async (req: Request) => {
             const msg = `billing failed for student ${student.id} (${target.role}): ${(err as Error).message}`;
             console.error(msg);
             errors.push(msg);
+            await supabase.from("tempo_automation_logs").insert({
+              student_identifier: student.name,
+              action_type: "billing_error",
+              raw_data: msg,
+            });
           }
         }
       }

@@ -3671,13 +3671,16 @@ export default function App({ user }) {
             if (rawSettings) {
               const localSettings = JSON.parse(rawSettings);
               setSettings(localSettings);
-              await supabase.from("user_settings").upsert({
-                user_id: user.id,
-                google_calendar_key: localSettings.googleCalendarKey || "",
-                google_client_id: localSettings.googleClientId || "",
-                morning_key: localSettings.morningKey || "",
-                morning_secret: localSettings.morningSecret || "",
-              });
+              await supabase.from("user_settings").upsert(
+                {
+                  user_id: user.id,
+                  google_calendar_key: localSettings.googleCalendarKey || "",
+                  google_client_id: localSettings.googleClientId || "",
+                  morning_key: localSettings.morningKey || "",
+                  morning_secret: localSettings.morningSecret || "",
+                },
+                { onConflict: "user_id" },
+              );
               localStorage.removeItem("musicpro_settings");
             }
             return;
@@ -3855,16 +3858,19 @@ export default function App({ user }) {
 
   async function saveSettings(newSettings) {
     setSettings(newSettings);
-    await supabase.from("user_settings").upsert({
-      user_id: user.id,
-      google_calendar_key: newSettings.googleCalendarKey,
-      google_client_id: newSettings.googleClientId,
-      morning_key: newSettings.morningKey,
-      morning_secret: newSettings.morningSecret,
-      whapi_token: newSettings.whapiToken,
-      webhook_secret: newSettings.webhookSecret,
-      automation_enabled: newSettings.automationEnabled,
-    });
+    await supabase.from("user_settings").upsert(
+      {
+        user_id: user.id,
+        google_calendar_key: newSettings.googleCalendarKey,
+        google_client_id: newSettings.googleClientId,
+        morning_key: newSettings.morningKey,
+        morning_secret: newSettings.morningSecret,
+        whapi_token: newSettings.whapiToken,
+        webhook_secret: newSettings.webhookSecret,
+        automation_enabled: newSettings.automationEnabled,
+      },
+      { onConflict: "user_id" },
+    );
   }
 
   // ── Availability save ─────────────────────────────────────────────────────

@@ -39,11 +39,6 @@ Deno.test("reminder params: parent uses 'של <name>'", () => {
   ]);
 });
 
-Deno.test("billing params order = [greeting, count, lessonRef, total]", () => {
-  assertEquals(buildBillingParams(base, "student", 4), [
-    "דנה",
-    "4",
-    "שלנו",
-    "320",
-  ]);
+Deno.test("billing params order = [greeting, count, total] (3 vars)", () => {
+  assertEquals(buildBillingParams(base, "student", 4), ["דנה", "4", "320"]);
 });

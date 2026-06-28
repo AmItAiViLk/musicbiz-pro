@@ -175,16 +175,17 @@ export function buildReminderParams(
 }
 
 /**
- * Params for the `monthly_billing` template:
- *   {{1}}=greeting, {{2}}=count, {{3}}=lessonRef, {{4}}=total
+ * Params for the approved `monthly_billing` template (3 variables):
+ *   {{1}}=greeting, {{2}}=count, {{3}}=total
+ * (The approved template has no lesson-reference variable.)
  */
 export function buildBillingParams(
   s: Student,
   role: "student" | "parent" | null,
   monthlyCount: number,
 ): string[] {
-  const { greeting, lessonRef } = getMsgParts(s, role);
+  const { greeting } = getMsgParts(s, role);
   const count = monthlyCount ?? calcMonthlyLessons(s.lessonDay);
   const total = count * (s.price ?? 0);
-  return [greeting, String(count), lessonRef, String(total)];
+  return [greeting, String(count), String(total)];
 }
