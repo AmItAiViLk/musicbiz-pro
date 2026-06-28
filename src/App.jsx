@@ -2974,7 +2974,7 @@ function SettingsView({
       : "";
 
   async function handleTestAutomation() {
-    if (!form.whapiToken) return;
+    if (!form.automationEnabled) return;
     setTestingAutomation(true);
     setTestResult(null);
     try {
@@ -3341,7 +3341,7 @@ function SettingsView({
               </p>
             </div>
 
-            {form.whapiToken && (
+            {form.automationEnabled && (
               <div className="flex items-center gap-3">
                 <button
                   type="button"

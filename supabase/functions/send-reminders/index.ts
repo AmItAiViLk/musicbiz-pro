@@ -12,12 +12,12 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendWhatsApp } from "../_shared/whatsapp.ts";
+import { sendTemplate } from "../_shared/meta.ts";
 import {
   resolveReminderTargets,
   resolveBillingTargets,
-  buildReminderMessage,
-  buildBillingMessage,
+  buildReminderParams,
+  buildBillingParams,
   Student,
 } from "../_shared/messaging.ts";
 import {
@@ -25,6 +25,13 @@ import {
   isBillingDay,
   calcMonthlyLessons,
 } from "../_shared/holidays.ts";
+
+// ─── Meta WhatsApp template config ──────────────────────────────────────────────
+// One central Meta number/token is used for all sends during the single-teacher phase.
+// Template names must EXACTLY match the approved names in WhatsApp Manager.
+const REMINDER_TEMPLATE = "lesson_reminderlesson_reminder";
+const BILLING_TEMPLATE = "monthly_billing";
+const TEMPLATE_LANG = "he";
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -94,12 +101,15 @@ Deno.serve(async (req: Request) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceKey);
 
+  // ── Central Meta credentials (single shared WhatsApp number) ───────────────
+  const metaToken = Deno.env.get("WHAPI_TOKEN")!; // permanent Meta access token
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+
   // ── Fetch eligible user_settings rows ─────────────────────────────────────
   let settingsQuery = supabase
     .from("user_settings")
     .select("*")
-    .eq("automation_enabled", true)
-    .not("whapi_token", "is", null);
+    .eq("automation_enabled", true);
 
   if (isTest && requestedUserId) {
     // Manual test: scope to the requesting user only
@@ -123,7 +133,6 @@ Deno.serve(async (req: Request) => {
 
   for (const userRow of userRows ?? []) {
     const userId: string = userRow.user_id;
-    const whapiToken: string = userRow.whapi_token;
 
     // Fetch students for this teacher
     const { data: studentRows, error: studentsErr } = await supabase
@@ -146,13 +155,19 @@ Deno.serve(async (req: Request) => {
         const targets = resolveReminderTargets(student);
         for (const target of targets) {
           try {
-            const message = buildReminderMessage(student, target.role);
-            await sendWhatsApp(whapiToken, target.phone, message);
+            const params = buildReminderParams(student, target.role);
+            await sendTemplate(
+              metaToken,
+              phoneNumberId,
+              target.phone,
+              REMINDER_TEMPLATE,
+              TEMPLATE_LANG,
+              params,
+            );
             await supabase.from("tempo_automation_logs").insert({
-              user_id: userId,
               student_identifier: student.name,
-              event_type: "reminder_sent",
-              message,
+              action_type: "reminder_sent",
+              raw_data: params.join(" | "),
             });
             sent++;
           } catch (err) {
@@ -169,17 +184,23 @@ Deno.serve(async (req: Request) => {
         const targets = resolveBillingTargets(student);
         for (const target of targets) {
           try {
-            const message = buildBillingMessage(
+            const params = buildBillingParams(
               student,
               target.role,
               monthlyCount,
             );
-            await sendWhatsApp(whapiToken, target.phone, message);
+            await sendTemplate(
+              metaToken,
+              phoneNumberId,
+              target.phone,
+              BILLING_TEMPLATE,
+              TEMPLATE_LANG,
+              params,
+            );
             await supabase.from("tempo_automation_logs").insert({
-              user_id: userId,
               student_identifier: student.name,
-              event_type: "billing_sent",
-              message,
+              action_type: "billing_sent",
+              raw_data: params.join(" | "),
             });
             sent++;
           } catch (err) {

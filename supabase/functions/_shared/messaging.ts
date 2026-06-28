@@ -157,3 +157,34 @@ export function buildBillingMessage(
   const total = count * (s.price ?? 0);
   return `היי ${greeting}, החודש צפויים ${count} שיעורים ${lessonRef} (לאחר חגים), הסכום לתשלום הוא ${total} ש"ח. ניתן להעביר בביט/פייבוקס/העברה בנקאית.`;
 }
+
+// ─── Template param builders (Meta Cloud API) ───────────────────────────────────
+// Return the ORDERED body parameters that fill {{1}}, {{2}}, … in the approved
+// WhatsApp templates. Order must match the template bodies exactly.
+
+/**
+ * Params for the `lesson_reminder` template:
+ *   {{1}}=greeting, {{2}}=lessonRef, {{3}}=dayName, {{4}}=time
+ */
+export function buildReminderParams(
+  s: Student,
+  role: "student" | "parent" | null,
+): string[] {
+  const { greeting, lessonRef, dayName } = getMsgParts(s, role);
+  return [greeting, lessonRef, dayName, s.lessonTime || "—"];
+}
+
+/**
+ * Params for the `monthly_billing` template:
+ *   {{1}}=greeting, {{2}}=count, {{3}}=lessonRef, {{4}}=total
+ */
+export function buildBillingParams(
+  s: Student,
+  role: "student" | "parent" | null,
+  monthlyCount: number,
+): string[] {
+  const { greeting, lessonRef } = getMsgParts(s, role);
+  const count = monthlyCount ?? calcMonthlyLessons(s.lessonDay);
+  const total = count * (s.price ?? 0);
+  return [greeting, String(count), lessonRef, String(total)];
+}
