@@ -1,9 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import {
-  buildClassifyPrompt,
-  parseCancelReason,
-  parseIntent,
-} from "./classify.ts";
+import { buildClassifyPrompt, parseIntent } from "./classify.ts";
 
 Deno.test("parseIntent maps clean labels", () => {
   assertEquals(parseIntent("cancel"), "cancel");
@@ -25,12 +21,4 @@ Deno.test("buildClassifyPrompt includes the message and labels", () => {
   assertEquals(p.includes("אני חולה"), true);
   assertEquals(p.includes("cancel"), true);
   assertEquals(p.includes("reschedule"), true);
-});
-
-Deno.test("parseCancelReason maps labels and falls back to unknown", () => {
-  assertEquals(parseCancelReason("exempt"), "exempt");
-  assertEquals(parseCancelReason("chargeable"), "chargeable");
-  assertEquals(parseCancelReason("unknown"), "unknown");
-  assertEquals(parseCancelReason("משהו לא ברור"), "unknown");
-  assertEquals(parseCancelReason(""), "unknown");
 });

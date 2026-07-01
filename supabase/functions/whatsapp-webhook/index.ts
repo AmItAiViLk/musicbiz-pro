@@ -21,12 +21,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizePhone } from "../_shared/whatsapp.ts";
-import {
-  classifyIntent,
-  type CancelReason,
-  type Intent,
-  judgeCancelReason,
-} from "../_shared/classify.ts";
+import { classifyIntent, type Intent } from "../_shared/classify.ts";
 import { hoursUntilNextLesson } from "../_shared/schedule.ts";
 
 const GRAPH_VERSION = "v21.0";
@@ -158,9 +153,7 @@ async function findStudentByPhone(
  * Returns the Hebrew reply, a log action, and who it concerns.
  */
 async function handleCancel(
-  apiKey: string,
   senderPhone: string,
-  text: string,
 ): Promise<{ reply: string; action: string; who: string }> {
   const student = await findStudentByPhone(senderPhone);
   if (!student) {
@@ -177,6 +170,7 @@ async function handleCancel(
     nowInIsrael(),
   );
 
+  // >= 24h: no policy reminder, just offer an alternative time.
   if (hours >= 24) {
     return {
       reply: "קיבלנו שלא תוכל להגיע. נשלח לך מועדים חלופיים בהקדם 🙏",
@@ -185,31 +179,12 @@ async function handleCancel(
     };
   }
 
-  let reason: CancelReason = "unknown";
-  try {
-    if (apiKey) reason = await judgeCancelReason(apiKey, text);
-  } catch (err) {
-    console.error("cancel-reason failed:", (err as Error).message);
-  }
-
-  if (reason === "exempt") {
-    return {
-      reply: "קיבלנו, ורפואה שלמה 🙏 לא נחייב על השיעור הזה. נתאם מועד חלופי.",
-      action: "cancel_exempt",
-      who,
-    };
-  }
-  if (reason === "chargeable") {
-    return {
-      reply:
-        "קיבלנו. מכיוון שהביטול פחות מ-24 שעות מראש, השיעור יחויב לפי המדיניות. נשמח לתאם מועד אחר.",
-      action: "cancel_charged",
-      who,
-    };
-  }
+  // < 24h: gentle policy reminder + offer alternative. Billing is the teacher's
+  // call (this late cancellation is flagged in-app via the cancel_late action).
   return {
-    reply: "קיבלנו את הביטול. המורה יחזור אליך בהקדם 🙏",
-    action: "cancel_review",
+    reply:
+      "תודה על העדכון 🙏 תזכורת קטנה: ביטול שיעור נעשה לפחות 24 שעות מראש.\nנשמח למצוא לך מועד חלופי — נשלח לך אפשרויות בהקדם.",
+    action: "cancel_late",
     who,
   };
 }
@@ -359,7 +334,7 @@ Deno.serve(async (req: Request) => {
   let who: string = senderPhone;
 
   if (intent === "cancel") {
-    const r = await handleCancel(apiKey, senderPhone, text);
+    const r = await handleCancel(senderPhone);
     reply = r.reply;
     action = r.action;
     who = r.who;
@@ -368,7 +343,7 @@ Deno.serve(async (req: Request) => {
     action = intent;
   }
 
-  // Record the resolved action (e.g. cancel_charged / paid / reschedule / other).
+  // Record the resolved action (e.g. cancel_late / cancel_reschedule / paid / other).
   await logToDb(who, action, text);
 
   // Reply to the student in Hebrew.
