@@ -21,7 +21,13 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizePhone } from "../_shared/whatsapp.ts";
-import { classifyIntent, type Intent } from "../_shared/classify.ts";
+import {
+  classifyIntent,
+  type CancelReason,
+  type Intent,
+  judgeCancelReason,
+} from "../_shared/classify.ts";
+import { hoursUntilNextLesson } from "../_shared/schedule.ts";
 
 const GRAPH_VERSION = "v21.0";
 
@@ -97,6 +103,115 @@ async function logToDb(
   } catch (err) {
     console.error("logToDb error:", (err as Error).message);
   }
+}
+
+// ─── Student lookup + cancellation policy ───────────────────────────────────────────
+
+interface StudentRow {
+  name: string;
+  phone: string;
+  contact_phone: string;
+  lesson_day: string;
+  lesson_time: string;
+}
+
+/** "Now" in Israel local time. */
+function nowInIsrael(): Date {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }),
+  );
+}
+
+/** Find the teacher's student whose phone or parent-phone matches the sender. */
+async function findStudentByPhone(
+  senderPhone: string,
+): Promise<StudentRow | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const userId = Deno.env.get("DEFAULT_USER_ID");
+  if (!supabaseUrl || !serviceKey || !userId) return null;
+  try {
+    const supabase = createClient(supabaseUrl, serviceKey);
+    const { data } = await supabase
+      .from("students")
+      .select("name, phone, contact_phone, lesson_day, lesson_time")
+      .eq("user_id", userId);
+    if (!data) return null;
+    return (
+      (data as StudentRow[]).find(
+        (s) =>
+          normalizePhone(s.phone || "") === senderPhone ||
+          normalizePhone(s.contact_phone || "") === senderPhone,
+      ) ?? null
+    );
+  } catch (err) {
+    console.error("findStudentByPhone error:", (err as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Handle a "can't make it" message: apply the 24h policy.
+ *  - >= 24h away  → not charged, offer alternative times (reschedule).
+ *  - < 24h away   → judge the reason: illness/force-majeure = exempt;
+ *                   other plans = charged; no reason = flag for the teacher.
+ * Returns the Hebrew reply, a log action, and who it concerns.
+ */
+async function handleCancel(
+  apiKey: string,
+  senderPhone: string,
+  text: string,
+): Promise<{ reply: string; action: string; who: string }> {
+  const student = await findStudentByPhone(senderPhone);
+  if (!student) {
+    return {
+      reply: "קיבלנו את הודעתך, נחזור אליך בהקדם 🙏",
+      action: "cancel_unmatched",
+      who: senderPhone,
+    };
+  }
+  const who = student.name || senderPhone;
+  const hours = hoursUntilNextLesson(
+    String(student.lesson_day ?? ""),
+    String(student.lesson_time ?? ""),
+    nowInIsrael(),
+  );
+
+  if (hours >= 24) {
+    return {
+      reply: "קיבלנו שלא תוכל להגיע. נשלח לך מועדים חלופיים בהקדם 🙏",
+      action: "cancel_reschedule",
+      who,
+    };
+  }
+
+  let reason: CancelReason = "unknown";
+  try {
+    if (apiKey) reason = await judgeCancelReason(apiKey, text);
+  } catch (err) {
+    console.error("cancel-reason failed:", (err as Error).message);
+  }
+
+  if (reason === "exempt") {
+    return {
+      reply: "קיבלנו, ורפואה שלמה 🙏 לא נחייב על השיעור הזה. נתאם מועד חלופי.",
+      action: "cancel_exempt",
+      who,
+    };
+  }
+  if (reason === "chargeable") {
+    return {
+      reply:
+        "קיבלנו. מכיוון שהביטול פחות מ-24 שעות מראש, השיעור יחויב לפי המדיניות. נשמח לתאם מועד אחר.",
+      action: "cancel_charged",
+      who,
+    };
+  }
+  return {
+    reply: "קיבלנו את הביטול. המורה יחזור אליך בהקדם 🙏",
+    action: "cancel_review",
+    who,
+  };
 }
 
 // ─── Webhook signature verification ────────────────────────────────────────────────
@@ -237,25 +352,41 @@ Deno.serve(async (req: Request) => {
     console.error("classify failed:", (err as Error).message);
   }
 
-  // Record the classified intent (cancel / paid / reschedule / other).
-  await logToDb(senderPhone, intent, text);
+  // Decide the reply + log action. "cancel" runs the 24h policy logic;
+  // the others use a fixed Hebrew reply.
+  let reply: string;
+  let action: string;
+  let who: string = senderPhone;
 
-  // Reply to the student in Hebrew based on intent.
+  if (intent === "cancel") {
+    const r = await handleCancel(apiKey, senderPhone, text);
+    reply = r.reply;
+    action = r.action;
+    who = r.who;
+  } else {
+    reply = REPLIES[intent];
+    action = intent;
+  }
+
+  // Record the resolved action (e.g. cancel_charged / paid / reschedule / other).
+  await logToDb(who, action, text);
+
+  // Reply to the student in Hebrew.
   try {
     const result = await sendMetaReply(
       token,
       phoneNumberId,
       senderPhone,
-      REPLIES[intent],
+      reply,
     );
     console.log(
-      `Reply (${intent}) sent to ${senderPhone}. API response: ${result}`,
+      `Reply (${action}) sent to ${senderPhone}. API response: ${result}`,
     );
-    await logToDb(senderPhone, `${intent}_reply`, REPLIES[intent]);
+    await logToDb(who, `${action}_reply`, reply);
   } catch (err) {
     const msg = (err as Error).message;
     console.error("Failed to send reply:", msg);
-    await logToDb(senderPhone, "auto_reply_error", msg);
+    await logToDb(who, "auto_reply_error", msg);
   }
 
   // Always 200 to Meta — a non-2xx triggers webhook retries and duplicate replies.
