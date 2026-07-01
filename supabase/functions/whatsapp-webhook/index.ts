@@ -21,11 +21,17 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizePhone } from "../_shared/whatsapp.ts";
+import { classifyIntent, type Intent } from "../_shared/classify.ts";
 
 const GRAPH_VERSION = "v21.0";
 
-// The single canned reply we send back. Hebrew per project rules.
-const AUTO_REPLY = "שלום! 🎵 קיבלנו את ההודעה שלך ונחזור אליך בהקדם.";
+// Per-intent Hebrew replies sent back to the student.
+const REPLIES: Record<Intent, string> = {
+  cancel: "קיבלנו, ביטלנו את השיעור. נעדכן בהתאם 🙏",
+  paid: "תודה! רשמנו את קבלת התשלום 🙏",
+  reschedule: "קיבלנו שתרצה לתאם מחדש — נשלח לך אפשרויות בהקדם.",
+  other: "שלום! 🎵 קיבלנו את הודעתך. אפשר לכתוב: ביטול, שילמתי, או תיאום מחדש.",
+};
 
 // ─── Meta WhatsApp Cloud API sender ──────────────────────────────────────────────
 
@@ -222,15 +228,30 @@ Deno.serve(async (req: Request) => {
     return new Response("OK", { status: 200 });
   }
 
+  // Classify the message intent (best-effort: fall back to "other").
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+  let intent: Intent = "other";
+  try {
+    if (apiKey) intent = await classifyIntent(apiKey, text);
+  } catch (err) {
+    console.error("classify failed:", (err as Error).message);
+  }
+
+  // Record the classified intent (cancel / paid / reschedule / other).
+  await logToDb(senderPhone, intent, text);
+
+  // Reply to the student in Hebrew based on intent.
   try {
     const result = await sendMetaReply(
       token,
       phoneNumberId,
       senderPhone,
-      AUTO_REPLY,
+      REPLIES[intent],
     );
-    console.log(`Reply sent to ${senderPhone}. API response: ${result}`);
-    await logToDb(senderPhone, "auto_reply", AUTO_REPLY);
+    console.log(
+      `Reply (${intent}) sent to ${senderPhone}. API response: ${result}`,
+    );
+    await logToDb(senderPhone, `${intent}_reply`, REPLIES[intent]);
   } catch (err) {
     const msg = (err as Error).message;
     console.error("Failed to send reply:", msg);
