@@ -399,6 +399,22 @@ const NAV_ITEMS = [
     ),
   },
   {
+    id: "activity",
+    label: "פעילות",
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        viewBox="0 0 24 24"
+      >
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+  },
+  {
     id: "invoices",
     label: "חשבוניות",
     icon: (
@@ -437,6 +453,7 @@ const NAV_ITEMS = [
 const VIEW_LABELS = {
   schedule: "לוח שיעורים",
   students: "תלמידים",
+  activity: "פעילות",
   invoices: "חשבוניות",
   settings: "הגדרות",
 };
@@ -3589,6 +3606,72 @@ function SettingsView({
 
 // ─── App Shell ────────────────────────────────────────────────────────────────
 
+// ─── Activity view — inbound WhatsApp events (cancel / paid / reschedule) ──────
+
+const ACTIVITY_LABELS = {
+  cancel_late: "ביטול מאוחר — פחות מ-24 שעות",
+  cancel_reschedule: "ביטול — בקשת מועד חלופי",
+  cancel_unmatched: "ביטול ממספר לא מזוהה",
+  paid: "תשלום התקבל",
+  reschedule: "בקשת תיאום מחדש",
+};
+const ACTIVITY_TYPES = Object.keys(ACTIVITY_LABELS);
+
+function ActivityView() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("tempo_automation_logs")
+        .select("student_identifier, action_type, raw_data, created_at")
+        .in("action_type", ACTIVITY_TYPES)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (active) {
+        setRows(data || []);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div className="max-w-2xl mx-auto" dir="rtl">
+      {loading ? (
+        <p className="text-slate-400 text-sm">טוען…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-slate-400 text-sm">אין פעילות להצגה עדיין.</p>
+      ) : (
+        <ul className="space-y-2">
+          {rows.map((r, i) => (
+            <li
+              key={i}
+              className="flex items-center justify-between bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3"
+            >
+              <div>
+                <div className="text-slate-100 text-sm font-semibold">
+                  {ACTIVITY_LABELS[r.action_type] || r.action_type}
+                </div>
+                <div className="text-slate-400 text-xs mt-0.5">
+                  {r.student_identifier}
+                </div>
+              </div>
+              <span className="text-slate-500 text-xs whitespace-nowrap">
+                {new Date(r.created_at).toLocaleString("he-IL")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function App({ user }) {
   const [activeTab, setActiveTab] = useState("schedule");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -4089,6 +4172,8 @@ export default function App({ user }) {
             onSyncContacts={syncContactPhones}
           />
         );
+      case "activity":
+        return <ActivityView />;
       case "invoices":
         return <InvoicesView students={students} settings={settings} />;
       case "settings":
