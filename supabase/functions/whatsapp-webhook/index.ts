@@ -321,10 +321,16 @@ Deno.serve(async (req: Request) => {
   // Classify the message intent (best-effort: fall back to "other").
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
   let intent: Intent = "other";
-  try {
-    if (apiKey) intent = await classifyIntent(apiKey, text);
-  } catch (err) {
-    console.error("classify failed:", (err as Error).message);
+  if (!apiKey) {
+    await logToDb(senderPhone, "classify_error", "missing ANTHROPIC_API_KEY");
+  } else {
+    try {
+      intent = await classifyIntent(apiKey, text);
+    } catch (err) {
+      const m = (err as Error).message;
+      console.error("classify failed:", m);
+      await logToDb(senderPhone, "classify_error", m);
+    }
   }
 
   // Decide the reply + log action. "cancel" runs the 24h policy logic;
