@@ -2714,6 +2714,7 @@ function InvoicesView({ students, settings = {}, userId }) {
   const [waChoice, setWaChoice] = useState(null);
   const [morningStatus, setMorningStatus] = useState({}); // { [studentId]: 'loading'|'paid'|'unpaid'|'unknown'|'error'|'no-creds' }
   const [payStatus, setPayStatus] = useState({}); // { [studentId]: 'paid'|'unpaid' } for the current month
+  const [pending, setPending] = useState([]); // rows awaiting the teacher's confirm
 
   const hasMorning = !!(settings.morningKey && settings.morningSecret);
 
@@ -2736,11 +2737,52 @@ function InvoicesView({ students, settings = {}, userId }) {
         data.forEach((r) => (m[r.student_id] = r.status));
         setPayStatus(m);
       }
+      const { data: pend } = await supabase
+        .from("payment_status")
+        .select("id, student_id, student_name, amount")
+        .eq("year_month", ym)
+        .eq("reminder_state", "pending_confirm");
+      if (active) setPending(pend || []);
     })();
     return () => {
       active = false;
     };
   }, [ym]);
+
+  // Teacher confirmed → send the reminder template via the send-reminders function.
+  async function confirmSendReminder(row) {
+    setPending((p) => p.filter((x) => x.id !== row.id));
+    await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
+        },
+        body: JSON.stringify({
+          action: "payment_reminder",
+          userId,
+          studentId: row.student_id,
+        }),
+      },
+    );
+  }
+
+  // Teacher says it's already paid → mark paid, no reminder.
+  async function markPendingPaid(row) {
+    setPending((p) => p.filter((x) => x.id !== row.id));
+    setPayStatus((p) => ({ ...p, [row.student_id]: "paid" }));
+    await supabase
+      .from("payment_status")
+      .update({
+        status: "paid",
+        paid_source: "manual",
+        reminder_state: "none",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+  }
 
   // Flip a student's paid/unpaid status for the month (manual mode).
   async function togglePaid(s) {
@@ -2859,6 +2901,37 @@ function InvoicesView({ students, settings = {}, userId }) {
         <h2 className="text-2xl font-bold text-white">חשבוניות</h2>
         <p className="text-sm text-slate-400 mt-0.5">{monthLabel}</p>
       </div>
+
+      {pending.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3">
+          <p className="text-sm font-bold text-amber-300">ממתין לאישורך</p>
+          {pending.map((row) => (
+            <div
+              key={row.id}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm"
+            >
+              <span className="text-slate-200">
+                נראה ש{row.student_name} עדיין לא שילם (₪{row.amount}). שילם
+                בדרך אחרת?
+              </span>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={() => markPendingPaid(row)}
+                  className="text-xs font-semibold text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-lg"
+                >
+                  סמן כשולם
+                </button>
+                <button
+                  onClick={() => confirmSendReminder(row)}
+                  className="text-xs font-semibold text-white bg-indigo-600 px-3 py-1.5 rounded-lg"
+                >
+                  שלח תזכורת
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3">
         {[
