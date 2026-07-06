@@ -2760,9 +2760,9 @@ function InvoicesView({ students, settings = {}, userId }) {
     );
   }
 
-  // Small paid/unpaid toggle — shown only for students tracked manually.
+  // Small paid/unpaid toggle — available for every student (a manual mark is an
+  // override that the automatic Morning check must never undo).
   function PaidToggle({ student }) {
-    if ((student.paymentTrackingMode || "manual") === "morning") return null;
     const paid = payStatus[student.id] === "paid";
     return (
       <button
