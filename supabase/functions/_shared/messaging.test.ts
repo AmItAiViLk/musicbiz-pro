@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   buildBillingParams,
+  buildPaymentReminderParams,
   buildReminderParams,
   Student,
 } from "./messaging.ts";
@@ -41,4 +42,8 @@ Deno.test("reminder params: parent uses 'של <name>'", () => {
 
 Deno.test("billing params order = [greeting, count, total] (3 vars)", () => {
   assertEquals(buildBillingParams(base, "student", 4), ["דנה", "4", "320"]);
+});
+
+Deno.test("payment reminder params = [greeting, amount]", () => {
+  assertEquals(buildPaymentReminderParams(base, 320), ["דנה", "320"]);
 });

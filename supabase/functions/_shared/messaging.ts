@@ -189,3 +189,12 @@ export function buildBillingParams(
   const total = count * (s.price ?? 0);
   return [greeting, String(count), String(total)];
 }
+
+/** Params for the `payment_reminder` template: {{1}}=greeting, {{2}}=amount. */
+export function buildPaymentReminderParams(
+  s: Student,
+  amount: number,
+): string[] {
+  const { greeting } = getMsgParts(s, null);
+  return [greeting, String(amount)];
+}
