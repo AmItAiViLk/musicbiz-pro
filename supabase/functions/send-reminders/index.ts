@@ -25,6 +25,14 @@ import {
   isBillingDay,
   calcMonthlyLessons,
 } from "../_shared/holidays.ts";
+import { yearMonthKey } from "../_shared/schedule.ts";
+
+/** "Now" in Israel local time. */
+function nowIsrael(): Date {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }),
+  );
+}
 
 // ─── Meta WhatsApp template config ──────────────────────────────────────────────
 // One central Meta number/token is used for all sends during the single-teacher phase.
@@ -186,6 +194,29 @@ Deno.serve(async (req: Request) => {
       // ── Monthly billing ──────────────────────────────────────────────────
       if ((billingToday || isTest) && student.price > 0) {
         const monthlyCount = calcMonthlyLessons(student.lessonDay);
+
+        // Record this student as unpaid for the month (foundation for reminders).
+        const total = monthlyCount * (student.price ?? 0);
+        await supabase.from("payment_status").upsert(
+          {
+            user_id: userId,
+            student_id: student.id,
+            student_name: student.name,
+            year_month: yearMonthKey(nowIsrael()),
+            amount: total,
+            status: "unpaid",
+            reminder_state: "none",
+            billed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          // Do NOT overwrite an existing row (e.g. one already marked paid) if
+          // billing is re-run for the same month.
+          {
+            onConflict: "user_id,student_id,year_month",
+            ignoreDuplicates: true,
+          },
+        );
+
         const targets = resolveBillingTargets(student);
         for (const target of targets) {
           try {
