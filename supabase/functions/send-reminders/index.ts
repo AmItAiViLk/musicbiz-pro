@@ -18,6 +18,7 @@ import {
   resolveBillingTargets,
   buildReminderParams,
   buildBillingParams,
+  buildPaymentReminderParams,
   Student,
 } from "../_shared/messaging.ts";
 import {
@@ -40,6 +41,7 @@ function nowIsrael(): Date {
 // Template names must EXACTLY match the approved names in WhatsApp Manager.
 const REMINDER_TEMPLATE = "lesson_reminderlesson_reminder";
 const BILLING_TEMPLATE = "monthly_billing";
+const PAYMENT_REMINDER_TEMPLATE = "payment_reminder";
 const TEMPLATE_LANG = "he";
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
@@ -94,12 +96,16 @@ Deno.serve(async (req: Request) => {
   // ── Parse body ─────────────────────────────────────────────────────────────
   let isTest = false;
   let requestedUserId: string | null = null;
+  let action = "";
+  let requestedStudentId = "";
 
   try {
     if (req.headers.get("content-type")?.includes("application/json")) {
       const body = await req.json();
       isTest = body?.test === true;
       requestedUserId = body?.userId ?? null;
+      action = body?.action ?? "";
+      requestedStudentId = body?.studentId ?? "";
     }
   } catch {
     // Non-JSON body is fine (pg_cron sends no body)
@@ -113,6 +119,61 @@ Deno.serve(async (req: Request) => {
   // ── Central Meta credentials (single shared WhatsApp number) ───────────────
   const metaToken = Deno.env.get("WHAPI_TOKEN")!; // permanent Meta access token
   const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+
+  // ── Action: send one payment reminder (teacher confirmed in the app) ───────
+  if (action === "payment_reminder" && requestedUserId && requestedStudentId) {
+    const ymNow = yearMonthKey(nowIsrael());
+    const { data: payRow } = await supabase
+      .from("payment_status")
+      .select("*")
+      .eq("user_id", requestedUserId)
+      .eq("student_id", requestedStudentId)
+      .eq("year_month", ymNow)
+      .maybeSingle();
+    const { data: stuRow } = await supabase
+      .from("students")
+      .select("*")
+      .eq("id", requestedStudentId)
+      .maybeSingle();
+    if (!payRow || !stuRow) {
+      return new Response(JSON.stringify({ ok: false, error: "not found" }), {
+        status: 404,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+    const student = rowToStudent(stuRow);
+    const params = buildPaymentReminderParams(
+      student,
+      Number(payRow.amount) || 0,
+    );
+    let sent = 0;
+    for (const target of resolveBillingTargets(student)) {
+      try {
+        await sendTemplate(
+          metaToken,
+          phoneNumberId,
+          target.phone,
+          PAYMENT_REMINDER_TEMPLATE,
+          TEMPLATE_LANG,
+          params,
+        );
+        sent++;
+      } catch (err) {
+        console.error("payment_reminder send failed:", (err as Error).message);
+      }
+    }
+    await supabase
+      .from("payment_status")
+      .update({
+        reminder_state: "reminded",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", payRow.id);
+    return new Response(JSON.stringify({ ok: true, sent }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
 
   // ── Fetch eligible user_settings rows ─────────────────────────────────────
   let settingsQuery = supabase
