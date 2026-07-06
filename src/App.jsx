@@ -262,6 +262,7 @@ function dbToStudent(row) {
     reminderToParent: row.reminder_to_parent ?? false,
     billingToStudent: row.billing_to_student ?? false,
     billingToParent: row.billing_to_parent ?? row.send_to_parent ?? true,
+    paymentTrackingMode: row.payment_tracking_mode ?? "manual",
     progress: 0,
     nextLesson: null,
   };
@@ -286,6 +287,7 @@ function studentToDb(student, userId) {
     reminder_to_parent: student.reminderToParent ?? false,
     billing_to_student: student.billingToStudent ?? false,
     billing_to_parent: student.billingToParent ?? true,
+    payment_tracking_mode: student.paymentTrackingMode ?? "manual",
   };
 }
 
@@ -643,6 +645,7 @@ const EMPTY_FORM = {
   reminderToParent: false,
   billingToStudent: false,
   billingToParent: true,
+  paymentTrackingMode: "manual",
 };
 
 function StudentForm({
@@ -674,6 +677,7 @@ function StudentForm({
       reminderToParent: form.reminderToParent,
       billingToStudent: form.billingToStudent,
       billingToParent: form.billingToParent,
+      paymentTrackingMode: form.paymentTrackingMode,
     });
     onClose();
   }
@@ -858,6 +862,31 @@ function StudentForm({
                   <span className="text-slate-300">להורה</span>
                 </label>
               </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
+              מעקב תשלום
+            </p>
+            <div className="flex gap-2">
+              {[
+                { v: "manual", label: "סימון ידני" },
+                { v: "morning", label: "אוטומטי (מורנינג)" },
+              ].map((o) => (
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => set("paymentTrackingMode", o.v)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
+                    (form.paymentTrackingMode || "manual") === o.v
+                      ? "bg-indigo-600 border-indigo-500 text-white"
+                      : "bg-slate-800 border-slate-700 text-slate-300"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -2687,7 +2716,6 @@ function InvoicesView({ students, settings = {}, userId }) {
   const [payStatus, setPayStatus] = useState({}); // { [studentId]: 'paid'|'unpaid' } for the current month
 
   const hasMorning = !!(settings.morningKey && settings.morningSecret);
-  const manualMode = (settings.paymentTrackingMode || "manual") !== "morning";
 
   // Current month key 'YYYY-MM'.
   const ym = (() => {
@@ -2732,9 +2760,9 @@ function InvoicesView({ students, settings = {}, userId }) {
     );
   }
 
-  // Small paid/unpaid toggle (manual mode only).
+  // Small paid/unpaid toggle — shown only for students tracked manually.
   function PaidToggle({ student }) {
-    if (!manualMode) return null;
+    if ((student.paymentTrackingMode || "manual") === "morning") return null;
     const paid = payStatus[student.id] === "paid";
     return (
       <button
@@ -3454,37 +3482,6 @@ function SettingsView({
               <p>• תזכורות נשלחות יום לפני השיעור (שישי לשיעורי ראשון)</p>
               <p>• חיוב נשלח ב-1 לחודש לתלמידים עם מחיר מוגדר</p>
               <p>• פונקציית Cron מופעלת ב-08:00 בכל בוקר (שרת)</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-200 mb-2">
-                מעקב תשלומים
-              </label>
-              <div className="flex gap-2">
-                {[
-                  { v: "manual", label: "סימון ידני" },
-                  { v: "morning", label: "אוטומטי (מורנינג)" },
-                ].map((o) => (
-                  <button
-                    key={o.v}
-                    type="button"
-                    onClick={() =>
-                      setForm((f) => ({ ...f, paymentTrackingMode: o.v }))
-                    }
-                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
-                      (form.paymentTrackingMode || "manual") === o.v
-                        ? "bg-indigo-600 border-indigo-500 text-white"
-                        : "bg-slate-800 border-slate-700 text-slate-300"
-                    }`}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                איך לדעת מי שילם — סימון ידני באפליקציה, או קריאה אוטומטית
-                ממורנינג
-              </p>
             </div>
           </div>
         </div>
