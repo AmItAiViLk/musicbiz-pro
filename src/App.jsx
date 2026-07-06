@@ -2681,11 +2681,75 @@ function GCalImportWizard({
 
 // ─── Invoices View ────────────────────────────────────────────────────────────
 
-function InvoicesView({ students, settings = {} }) {
+function InvoicesView({ students, settings = {}, userId }) {
   const [waChoice, setWaChoice] = useState(null);
   const [morningStatus, setMorningStatus] = useState({}); // { [studentId]: 'loading'|'paid'|'unpaid'|'unknown'|'error'|'no-creds' }
+  const [payStatus, setPayStatus] = useState({}); // { [studentId]: 'paid'|'unpaid' } for the current month
 
   const hasMorning = !!(settings.morningKey && settings.morningSecret);
+  const manualMode = (settings.paymentTrackingMode || "manual") !== "morning";
+
+  // Current month key 'YYYY-MM'.
+  const ym = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  })();
+
+  // Load this month's payment statuses.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("payment_status")
+        .select("student_id, status")
+        .eq("year_month", ym);
+      if (active && data) {
+        const m = {};
+        data.forEach((r) => (m[r.student_id] = r.status));
+        setPayStatus(m);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [ym]);
+
+  // Flip a student's paid/unpaid status for the month (manual mode).
+  async function togglePaid(s) {
+    const next = payStatus[s.id] === "paid" ? "unpaid" : "paid";
+    setPayStatus((p) => ({ ...p, [s.id]: next }));
+    await supabase.from("payment_status").upsert(
+      {
+        user_id: userId,
+        student_id: s.id,
+        student_name: s.name,
+        year_month: ym,
+        status: next,
+        paid_source: next === "paid" ? "manual" : null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,student_id,year_month" },
+    );
+  }
+
+  // Small paid/unpaid toggle (manual mode only).
+  function PaidToggle({ student }) {
+    if (!manualMode) return null;
+    const paid = payStatus[student.id] === "paid";
+    return (
+      <button
+        type="button"
+        onClick={() => togglePaid(student)}
+        className={`text-xs font-semibold px-2 py-1 rounded-lg border transition-colors ${
+          paid
+            ? "text-emerald-400 border-emerald-500/40"
+            : "text-amber-400 border-amber-500/40"
+        }`}
+      >
+        {paid ? "✓ שולם" : "! לא שולם"}
+      </button>
+    );
+  }
 
   async function checkPayment(s) {
     if (!hasMorning) {
@@ -2836,6 +2900,7 @@ function InvoicesView({ students, settings = {} }) {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="font-bold text-white">₪{total}</span>
+                    <PaidToggle student={s} />
                     <MorningBadge id={s.id} />
                     {hasMorning && (
                       <button
@@ -2919,6 +2984,7 @@ function InvoicesView({ students, settings = {} }) {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
+                        <PaidToggle student={s} />
                         <MorningBadge id={s.id} />
                         {hasMorning && (
                           <button
@@ -3389,6 +3455,37 @@ function SettingsView({
               <p>• חיוב נשלח ב-1 לחודש לתלמידים עם מחיר מוגדר</p>
               <p>• פונקציית Cron מופעלת ב-08:00 בכל בוקר (שרת)</p>
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-200 mb-2">
+                מעקב תשלומים
+              </label>
+              <div className="flex gap-2">
+                {[
+                  { v: "manual", label: "סימון ידני" },
+                  { v: "morning", label: "אוטומטי (מורנינג)" },
+                ].map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() =>
+                      setForm((f) => ({ ...f, paymentTrackingMode: o.v }))
+                    }
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
+                      (form.paymentTrackingMode || "manual") === o.v
+                        ? "bg-indigo-600 border-indigo-500 text-white"
+                        : "bg-slate-800 border-slate-700 text-slate-300"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                איך לדעת מי שילם — סימון ידני באפליקציה, או קריאה אוטומטית
+                ממורנינג
+              </p>
+            </div>
           </div>
         </div>
 
@@ -3685,6 +3782,7 @@ export default function App({ user }) {
     whapiToken: "",
     webhookSecret: "",
     automationEnabled: false,
+    paymentTrackingMode: "manual",
     googleRefreshToken: "", // set by gcal-oauth Edge Function, read-only from UI
   });
   const [loading, setLoading] = useState(true);
@@ -3783,6 +3881,7 @@ export default function App({ user }) {
           whapiToken: settingsData.whapi_token || "",
           webhookSecret: settingsData.webhook_secret || "",
           automationEnabled: settingsData.automation_enabled ?? false,
+          paymentTrackingMode: settingsData.payment_tracking_mode ?? "manual",
           googleRefreshToken: settingsData.google_refresh_token || "",
         });
       if (availData)
@@ -3951,6 +4050,7 @@ export default function App({ user }) {
         whapi_token: newSettings.whapiToken,
         webhook_secret: newSettings.webhookSecret,
         automation_enabled: newSettings.automationEnabled,
+        payment_tracking_mode: newSettings.paymentTrackingMode,
       },
       { onConflict: "user_id" },
     );
@@ -4175,7 +4275,13 @@ export default function App({ user }) {
       case "activity":
         return <ActivityView />;
       case "invoices":
-        return <InvoicesView students={students} settings={settings} />;
+        return (
+          <InvoicesView
+            students={students}
+            settings={settings}
+            userId={user.id}
+          />
+        );
       case "settings":
         return (
           <SettingsView
