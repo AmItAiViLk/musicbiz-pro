@@ -4545,6 +4545,7 @@ export default function App({ user }) {
             reminderToParent: editingStudent.reminderToParent ?? false,
             billingToStudent: editingStudent.billingToStudent ?? false,
             billingToParent: editingStudent.billingToParent ?? true,
+            paymentTrackingMode: editingStudent.paymentTrackingMode ?? "manual",
           }}
           onSave={saveEditedStudent}
           onDelete={deleteStudent}
