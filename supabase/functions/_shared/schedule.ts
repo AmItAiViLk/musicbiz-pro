@@ -59,3 +59,24 @@ export function isBeyond24h(
 export function yearMonthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
+
+const HEBREW_MONTHS = [
+  "ינואר",
+  "פברואר",
+  "מרץ",
+  "אפריל",
+  "מאי",
+  "יוני",
+  "יולי",
+  "אוגוסט",
+  "ספטמבר",
+  "אוקטובר",
+  "נובמבר",
+  "דצמבר",
+];
+
+/** Hebrew month name for a 'YYYY-MM' string (falls back to the input). */
+export function hebrewMonthLabel(yearMonth: string): string {
+  const m = parseInt((yearMonth || "").split("-")[1], 10);
+  return HEBREW_MONTHS[m - 1] ?? yearMonth;
+}

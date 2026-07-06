@@ -26,7 +26,7 @@ import {
   isBillingDay,
   calcMonthlyLessons,
 } from "../_shared/holidays.ts";
-import { yearMonthKey } from "../_shared/schedule.ts";
+import { hebrewMonthLabel, yearMonthKey } from "../_shared/schedule.ts";
 import { getMorningPaid } from "../_shared/morning.ts";
 
 /** "Now" in Israel local time. */
@@ -143,8 +143,8 @@ Deno.serve(async (req: Request) => {
     }
     const student = rowToStudent(stuRow);
     const params = buildPaymentReminderParams(
-      student,
       Number(payRow.amount) || 0,
+      hebrewMonthLabel(payRow.year_month),
     );
     let sent = 0;
     for (const target of resolveBillingTargets(student)) {

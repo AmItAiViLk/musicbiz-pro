@@ -44,6 +44,6 @@ Deno.test("billing params order = [greeting, count, total] (3 vars)", () => {
   assertEquals(buildBillingParams(base, "student", 4), ["דנה", "4", "320"]);
 });
 
-Deno.test("payment reminder params = [greeting, amount]", () => {
-  assertEquals(buildPaymentReminderParams(base, 320), ["דנה", "320"]);
+Deno.test("payment reminder params = [amount, month]", () => {
+  assertEquals(buildPaymentReminderParams(320, "יולי"), ["320", "יולי"]);
 });
