@@ -26,6 +26,7 @@ import {
   calcMonthlyLessons,
 } from "../_shared/holidays.ts";
 import { yearMonthKey } from "../_shared/schedule.ts";
+import { getMorningPaid } from "../_shared/morning.ts";
 
 /** "Now" in Israel local time. */
 function nowIsrael(): Date {
@@ -250,6 +251,58 @@ Deno.serve(async (req: Request) => {
             });
           }
         }
+      }
+    }
+
+    // ── Payment status check + 7-day dunning flag ──────────────────────────
+    const { data: unpaidRows } = await supabase
+      .from("payment_status")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "unpaid");
+
+    for (const pay of unpaidRows ?? []) {
+      // deno-lint-ignore no-explicit-any
+      const stu = (studentRows ?? []).find((s: any) => s.id === pay.student_id);
+      const mode = stu?.payment_tracking_mode ?? "manual";
+
+      // Auto-read Morning for auto-mode students; never override a manual mark.
+      if (
+        mode === "morning" &&
+        pay.paid_source !== "manual" &&
+        userRow.morning_key &&
+        userRow.morning_secret
+      ) {
+        const paid = await getMorningPaid(
+          userRow.morning_key,
+          userRow.morning_secret,
+          pay.student_name,
+        );
+        if (paid === true) {
+          await supabase
+            .from("payment_status")
+            .update({
+              status: "paid",
+              paid_source: "morning",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", pay.id);
+          continue;
+        }
+      }
+
+      // Flag for the teacher to confirm once 7+ days have passed since billing.
+      const days =
+        (Date.now() - new Date(pay.billed_at).getTime()) /
+        (1000 * 60 * 60 * 24);
+      if (days >= 7 && pay.reminder_state === "none") {
+        await supabase
+          .from("payment_status")
+          .update({
+            reminder_state: "pending_confirm",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", pay.id);
       }
     }
   }
