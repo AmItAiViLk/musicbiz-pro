@@ -54,3 +54,8 @@ export function isBeyond24h(
 ): boolean {
   return hoursUntilNextLesson(lessonDay, lessonTime, now) >= 24;
 }
+
+/** 'YYYY-MM' for the given date (local components). */
+export function yearMonthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}

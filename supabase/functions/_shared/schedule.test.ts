@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { hoursUntilNextLesson, isBeyond24h } from "./schedule.ts";
+import { hoursUntilNextLesson, isBeyond24h, yearMonthKey } from "./schedule.ts";
 
 // 2026-06-28 is a Sunday.
 const sunday10 = new Date(2026, 5, 28, 10, 0, 0); // Sun 10:00
@@ -25,4 +25,9 @@ Deno.test("lesson today but already passed → next week", () => {
 Deno.test("invalid input → Infinity", () => {
   assertEquals(hoursUntilNextLesson("", "16:00", sunday10), Infinity);
   assertEquals(hoursUntilNextLesson("1", "", sunday10), Infinity);
+});
+
+Deno.test("yearMonthKey formats YYYY-MM", () => {
+  assertEquals(yearMonthKey(new Date(2026, 0, 5)), "2026-01");
+  assertEquals(yearMonthKey(new Date(2026, 11, 31)), "2026-12");
 });
