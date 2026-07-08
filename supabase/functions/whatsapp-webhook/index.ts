@@ -24,6 +24,7 @@ import { normalizePhone } from "../_shared/whatsapp.ts";
 import { classifyIntent, type Intent } from "../_shared/classify.ts";
 import {
   computeFreeSlots,
+  DEFAULT_SLOT_MINUTES,
   type FreeSlot,
   hoursUntilNextLesson,
   slotLabel,
@@ -222,14 +223,20 @@ async function handleReschedule(
     .from("students")
     .select("lesson_day, lesson_time")
     .eq("user_id", userId);
+  const { data: settings } = await supabase
+    .from("user_settings")
+    .select("lesson_duration_minutes")
+    .eq("user_id", userId)
+    .maybeSingle();
 
+  const slotMinutes = settings?.lesson_duration_minutes ?? DEFAULT_SLOT_MINUTES;
   const occupied = (allStudents ?? [])
     .filter((s) => s.lesson_day !== null && s.lesson_time)
     .map((s) => ({
       day: parseInt(String(s.lesson_day), 10),
       time: String(s.lesson_time).slice(0, 5),
     }));
-  const free = computeFreeSlots(avail ?? [], occupied).slice(0, 4);
+  const free = computeFreeSlots(avail ?? [], occupied, slotMinutes).slice(0, 4);
 
   if (free.length === 0) {
     return {

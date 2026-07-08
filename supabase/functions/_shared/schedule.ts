@@ -90,25 +90,31 @@ export interface FreeSlot {
 
 const SLOT_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
-/** Hourly candidate start times ('HH:MM') within [start, end). */
-function hourlySlots(startTime: string, endTime: string): string[] {
-  const [sh, sm] = startTime.split(":").map((x) => parseInt(x, 10));
-  const [eh, em] = endTime.split(":").map((x) => parseInt(x, 10));
-  const endMin = eh * 60 + em;
-  const out: string[] = [];
-  let cur = sh * 60 + sm;
-  while (cur + 60 <= endMin) {
-    out.push(
-      `${String(Math.floor(cur / 60)).padStart(2, "0")}:${String(
-        cur % 60,
-      ).padStart(2, "0")}`,
-    );
-    cur += 60;
-  }
-  return out;
+/** Default lesson length in minutes (a lesson slot is 45 minutes). */
+export const DEFAULT_SLOT_MINUTES = 45;
+
+/** Minutes since midnight for an 'HH:MM' string. */
+function toMinutes(time: string): number {
+  const [h, m] = time.split(":").map((x) => parseInt(x, 10));
+  return h * 60 + m;
 }
 
-/** Free slots = availability windows (hourly) minus occupied (day,time). */
+/** 'HH:MM' string for minutes since midnight. */
+function toTime(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(
+    minutes % 60,
+  ).padStart(2, "0")}`;
+}
+
+/**
+ * Free slots = availability windows minus occupied lessons.
+ *
+ * Candidate start times are packed back-to-back from each window's start in
+ * steps of `slotMinutes`, using the full window without overlap. A candidate is
+ * free only if its [start, start+slotMinutes) range does not overlap any
+ * occupied lesson (each occupied lesson also spans `slotMinutes`), so a lesson
+ * on a non-round time correctly blocks the minutes it actually uses.
+ */
 export function computeFreeSlots(
   availability: {
     day_of_week: number;
@@ -116,14 +122,25 @@ export function computeFreeSlots(
     end_time: string;
   }[],
   occupied: { day: number; time: string }[],
+  slotMinutes: number = DEFAULT_SLOT_MINUTES,
 ): FreeSlot[] {
-  const taken = new Set(occupied.map((o) => `${o.day}|${o.time}`));
+  const busyByDay = new Map<number, number[]>();
+  for (const o of occupied) {
+    const arr = busyByDay.get(o.day) ?? [];
+    arr.push(toMinutes(o.time));
+    busyByDay.set(o.day, arr);
+  }
+
   const free: FreeSlot[] = [];
   for (const w of availability) {
-    for (const time of hourlySlots(w.start_time, w.end_time)) {
-      if (!taken.has(`${w.day_of_week}|${time}`)) {
-        free.push({ day: w.day_of_week, time });
-      }
+    const start = toMinutes(w.start_time);
+    const end = toMinutes(w.end_time);
+    const busy = busyByDay.get(w.day_of_week) ?? [];
+    for (let cur = start; cur + slotMinutes <= end; cur += slotMinutes) {
+      const overlaps = busy.some(
+        (b) => cur < b + slotMinutes && b < cur + slotMinutes,
+      );
+      if (!overlaps) free.push({ day: w.day_of_week, time: toTime(cur) });
     }
   }
   return free;

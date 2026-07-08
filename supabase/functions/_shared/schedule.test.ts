@@ -44,15 +44,45 @@ Deno.test("hebrewMonthLabel maps month number to name", () => {
   assertEquals(hebrewMonthLabel("2026-01"), "ינואר");
 });
 
-Deno.test("computeFreeSlots enumerates hourly slots minus occupied", () => {
+Deno.test("computeFreeSlots defaults to 45-min back-to-back slots", () => {
   const avail = [
     { day_of_week: 1, start_time: "09:00:00", end_time: "12:00:00" },
   ];
-  const occupied = [{ day: 1, time: "10:00" }];
-  assertEquals(computeFreeSlots(avail, occupied), [
+  // 09:00-12:00 packs 45-min slots: 09:00, 09:45, 10:30, 11:15.
+  assertEquals(computeFreeSlots(avail, []), [
     { day: 1, time: "09:00" },
-    { day: 1, time: "11:00" },
+    { day: 1, time: "09:45" },
+    { day: 1, time: "10:30" },
+    { day: 1, time: "11:15" },
   ]);
+});
+
+Deno.test(
+  "computeFreeSlots: occupied lesson blocks its full 45-min range",
+  () => {
+    const avail = [
+      { day_of_week: 1, start_time: "09:00:00", end_time: "12:00:00" },
+    ];
+    // A lesson at 10:00 spans 10:00-10:45, overlapping the 09:45 and 10:30 slots.
+    const occupied = [{ day: 1, time: "10:00" }];
+    assertEquals(computeFreeSlots(avail, occupied), [
+      { day: 1, time: "09:00" },
+      { day: 1, time: "11:15" },
+    ]);
+  },
+);
+
+Deno.test("computeFreeSlots honors a custom slot length", () => {
+  const avail = [{ day_of_week: 2, start_time: "16:00", end_time: "18:00" }];
+  // 60-min slots: 16:00, 17:00. Occupied 17:00 blocks the second.
+  assertEquals(computeFreeSlots(avail, [{ day: 2, time: "17:00" }], 60), [
+    { day: 2, time: "16:00" },
+  ]);
+});
+
+Deno.test("computeFreeSlots: no room for a full slot yields nothing", () => {
+  const avail = [{ day_of_week: 3, start_time: "09:00", end_time: "09:30" }];
+  assertEquals(computeFreeSlots(avail, []), []);
 });
 
 Deno.test("slotLabel formats day + time in Hebrew", () => {

@@ -3591,6 +3591,32 @@ function SettingsView({
               מועדים רק בחלונות האלו
             </p>
           </div>
+          <div className="flex items-center justify-between bg-white/[0.03] rounded-xl px-3 py-2.5">
+            <div>
+              <p className="text-sm font-semibold text-slate-200">משך שיעור</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                הבוט מחלק את חלונות הזמן למועדים באורך הזה
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={5}
+                max={240}
+                step={5}
+                value={form.lessonDurationMinutes ?? 45}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    lessonDurationMinutes: parseInt(e.target.value, 10) || 45,
+                  })
+                }
+                className="w-20 bg-transparent text-sm text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-indigo-500/50 rounded px-1 border border-white/10"
+                dir="ltr"
+              />
+              <span className="text-slate-500 text-xs">דקות</span>
+            </div>
+          </div>
           <div className="space-y-3">
             {[0, 1, 2, 3, 4, 5].map((day) => {
               const dayWins = availWindows.filter((w) => w.day_of_week === day);
@@ -4043,6 +4069,7 @@ export default function App({ user }) {
           webhookSecret: settingsData.webhook_secret || "",
           automationEnabled: settingsData.automation_enabled ?? false,
           paymentTrackingMode: settingsData.payment_tracking_mode ?? "manual",
+          lessonDurationMinutes: settingsData.lesson_duration_minutes ?? 45,
           googleRefreshToken: settingsData.google_refresh_token || "",
         });
       if (availData)
@@ -4212,6 +4239,7 @@ export default function App({ user }) {
         webhook_secret: newSettings.webhookSecret,
         automation_enabled: newSettings.automationEnabled,
         payment_tracking_mode: newSettings.paymentTrackingMode,
+        lesson_duration_minutes: newSettings.lessonDurationMinutes ?? 45,
       },
       { onConflict: "user_id" },
     );
