@@ -22,7 +22,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { normalizePhone } from "../_shared/whatsapp.ts";
 import { classifyIntent, type Intent } from "../_shared/classify.ts";
-import { hoursUntilNextLesson } from "../_shared/schedule.ts";
+import {
+  computeFreeSlots,
+  type FreeSlot,
+  hoursUntilNextLesson,
+  slotLabel,
+} from "../_shared/schedule.ts";
 
 const GRAPH_VERSION = "v21.0";
 
@@ -103,6 +108,7 @@ async function logToDb(
 // ─── Student lookup + cancellation policy ───────────────────────────────────────────
 
 interface StudentRow {
+  id: string;
   name: string;
   phone: string;
   contact_phone: string;
@@ -129,7 +135,7 @@ async function findStudentByPhone(
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data } = await supabase
       .from("students")
-      .select("name, phone, contact_phone, lesson_day, lesson_time")
+      .select("id, name, phone, contact_phone, lesson_day, lesson_time")
       .eq("user_id", userId);
     if (!data) return null;
     return (
@@ -186,6 +192,127 @@ async function handleCancel(
       "תודה על העדכון 🙏 תזכורת קטנה: ביטול שיעור נעשה לפחות 24 שעות מראש.\nנשמח למצוא לך מועד חלופי — נשלח לך אפשרויות בהקדם.",
     action: "cancel_late",
     who,
+  };
+}
+
+// ─── Reschedule: offer free slots + handle the student's pick ───────────────────────
+
+/** Offer the teacher's open weekly slots when a student asks to reschedule. */
+async function handleReschedule(
+  senderPhone: string,
+): Promise<{ reply: string; action: string; who: string }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const userId = Deno.env.get("DEFAULT_USER_ID");
+  const student = await findStudentByPhone(senderPhone);
+  if (!supabaseUrl || !serviceKey || !userId || !student) {
+    return {
+      reply: "קיבלנו שתרצה לתאם מחדש. המורה יחזור אליך בהקדם 🙏",
+      action: "reschedule_unmatched",
+      who: student?.name || senderPhone,
+    };
+  }
+  const supabase = createClient(supabaseUrl, serviceKey);
+
+  const { data: avail } = await supabase
+    .from("teacher_availability")
+    .select("day_of_week, start_time, end_time")
+    .eq("user_id", userId);
+  const { data: allStudents } = await supabase
+    .from("students")
+    .select("lesson_day, lesson_time")
+    .eq("user_id", userId);
+
+  const occupied = (allStudents ?? [])
+    .filter((s) => s.lesson_day !== null && s.lesson_time)
+    .map((s) => ({
+      day: parseInt(String(s.lesson_day), 10),
+      time: String(s.lesson_time).slice(0, 5),
+    }));
+  const free = computeFreeSlots(avail ?? [], occupied).slice(0, 4);
+
+  if (free.length === 0) {
+    return {
+      reply: "כרגע אין שעות פנויות מתאימות. המורה יחזור אליך לתיאום 🙏",
+      action: "reschedule_no_slots",
+      who: student.name,
+    };
+  }
+
+  // Replace any previous open request for this student, then store the new one.
+  await supabase
+    .from("reschedule_requests")
+    .delete()
+    .eq("user_id", userId)
+    .eq("student_phone", senderPhone)
+    .eq("status", "pending_selection");
+  await supabase.from("reschedule_requests").insert({
+    user_id: userId,
+    student_id: student.id ?? "",
+    student_phone: senderPhone,
+    options: free,
+    status: "pending_selection",
+  });
+
+  const lines = free.map(
+    (s: FreeSlot, i: number) => `${i + 1}. ${slotLabel(s)}`,
+  );
+  return {
+    reply:
+      "אלה השעות הפנויות. השב במספר האפשרות שמתאימה לך:\n" + lines.join("\n"),
+    action: "reschedule_offered",
+    who: student.name,
+  };
+}
+
+/**
+ * If the sender has an open reschedule request, treat their message as a slot
+ * pick. Returns null when there is no open request (so normal routing runs).
+ */
+async function handleReschedulePick(
+  senderPhone: string,
+  text: string,
+): Promise<{ reply: string; action: string; who: string } | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const userId = Deno.env.get("DEFAULT_USER_ID");
+  if (!supabaseUrl || !serviceKey || !userId) return null;
+  const supabase = createClient(supabaseUrl, serviceKey);
+
+  const { data: reqRow } = await supabase
+    .from("reschedule_requests")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("student_phone", senderPhone)
+    .eq("status", "pending_selection")
+    .maybeSingle();
+  if (!reqRow) return null;
+
+  const options = (reqRow.options ?? []) as FreeSlot[];
+  const digit = parseInt(text.trim(), 10);
+  if (isNaN(digit) || digit < 1 || digit > options.length) {
+    const lines = options.map((s, i) => `${i + 1}. ${slotLabel(s)}`);
+    return {
+      reply: "לא הבנתי את הבחירה. השב במספר מהרשימה:\n" + lines.join("\n"),
+      action: "reschedule_pick_invalid",
+      who: senderPhone,
+    };
+  }
+
+  const chosen = options[digit - 1];
+  await supabase
+    .from("reschedule_requests")
+    .update({
+      selected_option: chosen,
+      status: "pending_approval",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", reqRow.id);
+
+  return {
+    reply: `בחרת ${slotLabel(chosen)}. העברנו למורה לאישור, נעדכן אותך 🙏`,
+    action: "reschedule_picked",
+    who: senderPhone,
   };
 }
 
@@ -318,6 +445,20 @@ Deno.serve(async (req: Request) => {
     return new Response("OK", { status: 200 });
   }
 
+  // If the student is mid-reschedule, read this message as their slot pick
+  // (before classifying, so a digit isn't treated as a new intent).
+  const pick = await handleReschedulePick(senderPhone, text);
+  if (pick) {
+    await logToDb(pick.who, pick.action, text);
+    try {
+      await sendMetaReply(token, phoneNumberId, senderPhone, pick.reply);
+      await logToDb(pick.who, `${pick.action}_reply`, pick.reply);
+    } catch (err) {
+      await logToDb(pick.who, "auto_reply_error", (err as Error).message);
+    }
+    return new Response("OK", { status: 200 });
+  }
+
   // Classify the message intent (best-effort: fall back to "other").
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
   let intent: Intent = "other";
@@ -341,6 +482,11 @@ Deno.serve(async (req: Request) => {
 
   if (intent === "cancel") {
     const r = await handleCancel(senderPhone);
+    reply = r.reply;
+    action = r.action;
+    who = r.who;
+  } else if (intent === "reschedule") {
+    const r = await handleReschedule(senderPhone);
     reply = r.reply;
     action = r.action;
     who = r.who;
