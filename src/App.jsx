@@ -3928,6 +3928,28 @@ export default function App({ user }) {
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [calChanges, setCalChanges] = useState([]);
   const [showCalChanges, setShowCalChanges] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0); // items needing the teacher's attention (for the bell dot)
+
+  // Count unhandled items so the bell dot shows only when there's something to do.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [resReq, payReq] = await Promise.all([
+        supabase
+          .from("reschedule_requests")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending_approval"),
+        supabase
+          .from("payment_status")
+          .select("id", { count: "exact", head: true })
+          .eq("reminder_state", "pending_confirm"),
+      ]);
+      if (active) setPendingCount((resReq.count || 0) + (payReq.count || 0));
+    })();
+    return () => {
+      active = false;
+    };
+  }, [activeTab]);
 
   // ── Load data from Supabase on mount ──────────────────────────────────────
 
@@ -4591,9 +4613,9 @@ export default function App({ user }) {
               </svg>
               {calChanges.length > 0 ? (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-              ) : (
+              ) : pendingCount > 0 ? (
                 <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-              )}
+              ) : null}
             </button>
           </div>
         </header>
