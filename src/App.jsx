@@ -3784,9 +3784,13 @@ const ACTIVITY_LABELS = {
 };
 const ACTIVITY_TYPES = Object.keys(ACTIVITY_LABELS);
 
-function ActivityView() {
+const RES_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+const slotText = (o) => (o ? `יום ${RES_DAYS[o.day] ?? "?"} ${o.time}` : "");
+
+function ActivityView({ userId }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resReqs, setResReqs] = useState([]); // pending reschedule approvals
 
   useEffect(() => {
     let active = true;
@@ -3797,8 +3801,14 @@ function ActivityView() {
         .in("action_type", ACTIVITY_TYPES)
         .order("created_at", { ascending: false })
         .limit(50);
+      const { data: reqs } = await supabase
+        .from("reschedule_requests")
+        .select("id, student_id, student_phone, selected_option")
+        .eq("status", "pending_approval")
+        .order("updated_at", { ascending: false });
       if (active) {
         setRows(data || []);
+        setResReqs(reqs || []);
         setLoading(false);
       }
     })();
@@ -3807,8 +3817,64 @@ function ActivityView() {
     };
   }, []);
 
+  async function approveRes(row) {
+    setResReqs((p) => p.filter((x) => x.id !== row.id));
+    await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
+        },
+        body: JSON.stringify({
+          action: "reschedule_approved",
+          userId,
+          requestId: row.id,
+        }),
+      },
+    );
+  }
+
+  async function rejectRes(row) {
+    setResReqs((p) => p.filter((x) => x.id !== row.id));
+    await supabase
+      .from("reschedule_requests")
+      .update({ status: "rejected", updated_at: new Date().toISOString() })
+      .eq("id", row.id);
+  }
+
   return (
     <div className="max-w-2xl mx-auto" dir="rtl">
+      {resReqs.length > 0 && (
+        <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl p-4 space-y-3 mb-4">
+          <p className="text-sm font-bold text-indigo-300">בקשות תיאום מחדש</p>
+          {resReqs.map((row) => (
+            <div
+              key={row.id}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm"
+            >
+              <span className="text-slate-200">
+                בקשה למועד {slotText(row.selected_option)}
+              </span>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={() => rejectRes(row)}
+                  className="text-xs font-semibold text-red-400 border border-red-500/40 px-3 py-1.5 rounded-lg"
+                >
+                  דחה
+                </button>
+                <button
+                  onClick={() => approveRes(row)}
+                  className="text-xs font-semibold text-white bg-indigo-600 px-3 py-1.5 rounded-lg"
+                >
+                  אשר
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {loading ? (
         <p className="text-slate-400 text-sm">טוען…</p>
       ) : rows.length === 0 ? (
@@ -4343,7 +4409,7 @@ export default function App({ user }) {
           />
         );
       case "activity":
-        return <ActivityView />;
+        return <ActivityView userId={user.id} />;
       case "invoices":
         return (
           <InvoicesView
@@ -4505,7 +4571,12 @@ export default function App({ user }) {
               </>
             )}
             <button
-              onClick={() => calChanges.length > 0 && setShowCalChanges(true)}
+              onClick={() =>
+                calChanges.length > 0
+                  ? setShowCalChanges(true)
+                  : setActiveTab("activity")
+              }
+              title="פעילות והתראות"
               className="relative p-1.5 text-slate-500 hover:bg-white/[0.05] hover:text-white rounded-xl transition-colors"
             >
               <svg
