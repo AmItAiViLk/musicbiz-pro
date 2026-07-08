@@ -19,6 +19,7 @@ import {
   buildReminderParams,
   buildBillingParams,
   buildPaymentReminderParams,
+  buildRescheduleConfirmParams,
   Student,
 } from "../_shared/messaging.ts";
 import {
@@ -26,7 +27,11 @@ import {
   isBillingDay,
   calcMonthlyLessons,
 } from "../_shared/holidays.ts";
-import { hebrewMonthLabel, yearMonthKey } from "../_shared/schedule.ts";
+import {
+  hebrewMonthLabel,
+  slotLabel,
+  yearMonthKey,
+} from "../_shared/schedule.ts";
 import { getMorningPaid } from "../_shared/morning.ts";
 
 /** "Now" in Israel local time. */
@@ -42,6 +47,7 @@ function nowIsrael(): Date {
 const REMINDER_TEMPLATE = "lesson_reminderlesson_reminder";
 const BILLING_TEMPLATE = "monthly_billing";
 const PAYMENT_REMINDER_TEMPLATE = "payment_reminder";
+const RESCHEDULE_CONFIRMED_TEMPLATE = "reschedule_confirmed";
 const TEMPLATE_LANG = "he";
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
@@ -98,6 +104,7 @@ Deno.serve(async (req: Request) => {
   let requestedUserId: string | null = null;
   let action = "";
   let requestedStudentId = "";
+  let requestId = "";
 
   try {
     if (req.headers.get("content-type")?.includes("application/json")) {
@@ -106,6 +113,7 @@ Deno.serve(async (req: Request) => {
       requestedUserId = body?.userId ?? null;
       action = body?.action ?? "";
       requestedStudentId = body?.studentId ?? "";
+      requestId = body?.requestId ?? "";
     }
   } catch {
     // Non-JSON body is fine (pg_cron sends no body)
@@ -169,6 +177,66 @@ Deno.serve(async (req: Request) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", payRow.id);
+    return new Response(JSON.stringify({ ok: true, sent }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
+  // ── Action: approve a reschedule (teacher confirmed in the app) ────────────
+  if (action === "reschedule_approved" && requestedUserId && requestId) {
+    const { data: reqRow } = await supabase
+      .from("reschedule_requests")
+      .select("*")
+      .eq("id", requestId)
+      .eq("user_id", requestedUserId)
+      .maybeSingle();
+    if (!reqRow || !reqRow.selected_option) {
+      return new Response(JSON.stringify({ ok: false, error: "not found" }), {
+        status: 404,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+    const slot = reqRow.selected_option as { day: number; time: string };
+    const { data: stuRow } = await supabase
+      .from("students")
+      .select("*")
+      .eq("id", reqRow.student_id)
+      .maybeSingle();
+
+    // Move the student's weekly lesson to the chosen slot.
+    await supabase
+      .from("students")
+      .update({ lesson_day: String(slot.day), lesson_time: slot.time })
+      .eq("id", reqRow.student_id);
+    await supabase
+      .from("reschedule_requests")
+      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .eq("id", requestId);
+
+    let sent = 0;
+    if (stuRow) {
+      const student = rowToStudent(stuRow);
+      const params = buildRescheduleConfirmParams(student, slotLabel(slot));
+      for (const target of resolveReminderTargets(student)) {
+        try {
+          await sendTemplate(
+            metaToken,
+            phoneNumberId,
+            target.phone,
+            RESCHEDULE_CONFIRMED_TEMPLATE,
+            TEMPLATE_LANG,
+            params,
+          );
+          sent++;
+        } catch (err) {
+          console.error(
+            "reschedule confirm send failed:",
+            (err as Error).message,
+          );
+        }
+      }
+    }
     return new Response(JSON.stringify({ ok: true, sent }), {
       status: 200,
       headers: { ...CORS, "Content-Type": "application/json" },
