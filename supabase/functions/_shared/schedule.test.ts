@@ -1,8 +1,10 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
+  computeFreeSlots,
   hebrewMonthLabel,
   hoursUntilNextLesson,
   isBeyond24h,
+  slotLabel,
   yearMonthKey,
 } from "./schedule.ts";
 
@@ -40,4 +42,19 @@ Deno.test("yearMonthKey formats YYYY-MM", () => {
 Deno.test("hebrewMonthLabel maps month number to name", () => {
   assertEquals(hebrewMonthLabel("2026-07"), "יולי");
   assertEquals(hebrewMonthLabel("2026-01"), "ינואר");
+});
+
+Deno.test("computeFreeSlots enumerates hourly slots minus occupied", () => {
+  const avail = [
+    { day_of_week: 1, start_time: "09:00:00", end_time: "12:00:00" },
+  ];
+  const occupied = [{ day: 1, time: "10:00" }];
+  assertEquals(computeFreeSlots(avail, occupied), [
+    { day: 1, time: "09:00" },
+    { day: 1, time: "11:00" },
+  ]);
+});
+
+Deno.test("slotLabel formats day + time in Hebrew", () => {
+  assertEquals(slotLabel({ day: 1, time: "09:00" }), "יום שני 09:00");
 });
