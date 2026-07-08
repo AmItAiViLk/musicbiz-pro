@@ -3,6 +3,7 @@ import {
   buildBillingParams,
   buildPaymentReminderParams,
   buildReminderParams,
+  buildRescheduleConfirmParams,
   Student,
 } from "./messaging.ts";
 
@@ -46,4 +47,11 @@ Deno.test("billing params order = [greeting, count, total] (3 vars)", () => {
 
 Deno.test("payment reminder params = [amount, month]", () => {
   assertEquals(buildPaymentReminderParams(320, "יולי"), ["320", "יולי"]);
+});
+
+Deno.test("reschedule confirm params = [greeting, slot]", () => {
+  assertEquals(buildRescheduleConfirmParams(base, "יום שני 09:00"), [
+    "דנה",
+    "יום שני 09:00",
+  ]);
 });

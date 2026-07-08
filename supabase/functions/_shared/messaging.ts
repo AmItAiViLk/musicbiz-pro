@@ -197,3 +197,12 @@ export function buildPaymentReminderParams(
 ): string[] {
   return [String(amount), monthLabel];
 }
+
+/** Params for the `reschedule_confirmed` template: {{1}}=greeting, {{2}}=slot label. */
+export function buildRescheduleConfirmParams(
+  s: Student,
+  slotText: string,
+): string[] {
+  const { greeting } = getMsgParts(s, null);
+  return [greeting, slotText];
+}
