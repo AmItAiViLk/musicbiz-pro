@@ -243,6 +243,194 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // ── Action: teacher approved contacting a swap partner ─────────────────────
+  if (action === "swap_contact_approved" && requestedUserId && requestId) {
+    const { data: reqRow } = await supabase
+      .from("reschedule_requests")
+      .select("*")
+      .eq("id", requestId)
+      .eq("user_id", requestedUserId)
+      .maybeSingle();
+    if (!reqRow || !reqRow.swap_target_student_id) {
+      return new Response(JSON.stringify({ ok: false, error: "not found" }), {
+        status: 404,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+    const { data: partner } = await supabase
+      .from("students")
+      .select("*")
+      .eq("id", reqRow.swap_target_student_id)
+      .maybeSingle();
+    let sent = 0;
+    if (partner) {
+      const partnerPhone = partner.phone || partner.contact_phone;
+      try {
+        await sendTemplate(
+          metaToken,
+          phoneNumberId,
+          partnerPhone,
+          "swap_request",
+          TEMPLATE_LANG,
+          [partner.name || "היי", slotLabel(reqRow.selected_option)],
+        );
+        sent = 1;
+      } catch (err) {
+        console.error("swap contact failed:", (err as Error).message);
+      }
+    }
+    await supabase
+      .from("reschedule_requests")
+      .update({
+        status: "awaiting_swap_partner",
+        deadline_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", requestId);
+    return new Response(JSON.stringify({ ok: true, sent }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
+  // ── Action: teacher approved the full swap plan ────────────────────────────
+  if (action === "swap_approved" && requestedUserId && requestId) {
+    const { data: reqRow } = await supabase
+      .from("reschedule_requests")
+      .select("*")
+      .eq("id", requestId)
+      .eq("user_id", requestedUserId)
+      .maybeSingle();
+    if (
+      !reqRow ||
+      !reqRow.selected_option ||
+      !reqRow.swap_target_slot ||
+      !reqRow.swap_target_student_id
+    ) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "incomplete plan" }),
+        {
+          status: 400,
+          headers: { ...CORS, "Content-Type": "application/json" },
+        },
+      );
+    }
+    const sMove = reqRow.selected_option as { day: number; time: string }; // rescheduling student → partner's old slot
+    const pMove = reqRow.swap_target_slot as { day: number; time: string }; // partner → chosen free slot
+
+    await supabase
+      .from("students")
+      .update({ lesson_day: String(sMove.day), lesson_time: sMove.time })
+      .eq("id", reqRow.student_id);
+    await supabase
+      .from("students")
+      .update({ lesson_day: String(pMove.day), lesson_time: pMove.time })
+      .eq("id", reqRow.swap_target_student_id);
+    await supabase
+      .from("reschedule_requests")
+      .update({ status: "approved", updated_at: new Date().toISOString() })
+      .eq("id", requestId);
+
+    let sent = 0;
+    for (const [id, slot] of [
+      [reqRow.student_id, sMove],
+      [reqRow.swap_target_student_id, pMove],
+    ] as const) {
+      const { data: stuRow } = await supabase
+        .from("students")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (!stuRow) continue;
+      const student = rowToStudent(stuRow);
+      const params = buildRescheduleConfirmParams(student, slotLabel(slot));
+      for (const target of resolveReminderTargets(student)) {
+        try {
+          await sendTemplate(
+            metaToken,
+            phoneNumberId,
+            target.phone,
+            RESCHEDULE_CONFIRMED_TEMPLATE,
+            TEMPLATE_LANG,
+            params,
+          );
+          sent++;
+        } catch (err) {
+          console.error("swap confirm send failed:", (err as Error).message);
+        }
+      }
+    }
+    return new Response(JSON.stringify({ ok: true, sent }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
+  // ── Sweep: expired swap-partner waits → next candidate or fail ─────────────
+  {
+    const nowIso = new Date().toISOString();
+    const { data: expired } = await supabase
+      .from("reschedule_requests")
+      .select("*")
+      .eq("status", "awaiting_swap_partner")
+      .lt("deadline_at", nowIso);
+    for (const reqRow of expired ?? []) {
+      const remaining = (
+        (reqRow.swap_candidate_ids ?? []) as {
+          studentId: string;
+          slot: { day: number; time: string };
+        }[]
+      ).filter((c) => c.studentId !== reqRow.swap_target_student_id);
+      if (remaining.length === 0) {
+        await supabase
+          .from("reschedule_requests")
+          .update({ status: "failed", updated_at: nowIso })
+          .eq("id", reqRow.id);
+        continue;
+      }
+      const next = remaining[0];
+      const { data: partner } = await supabase
+        .from("students")
+        .select("*")
+        .eq("id", next.studentId)
+        .maybeSingle();
+      const partnerAuto = partner?.auto_swap_ok === true;
+      await supabase
+        .from("reschedule_requests")
+        .update({
+          swap_target_student_id: next.studentId,
+          selected_option: next.slot,
+          swap_candidate_ids: remaining,
+          swap_target_slot: null,
+          status: partnerAuto
+            ? "awaiting_swap_partner"
+            : "pending_contact_approval",
+          deadline_at: partnerAuto
+            ? new Date(Date.now() + 24 * 3600 * 1000).toISOString()
+            : null,
+          updated_at: nowIso,
+        })
+        .eq("id", reqRow.id);
+      if (partnerAuto && partner) {
+        try {
+          await sendTemplate(
+            metaToken,
+            phoneNumberId,
+            partner.phone || partner.contact_phone,
+            "swap_request",
+            TEMPLATE_LANG,
+            [partner.name || "היי", slotLabel(next.slot)],
+          );
+        } catch (err) {
+          console.error(
+            "next-candidate contact failed:",
+            (err as Error).message,
+          );
+        }
+      }
+    }
+  }
+
   // ── Fetch eligible user_settings rows ─────────────────────────────────────
   let settingsQuery = supabase
     .from("user_settings")
