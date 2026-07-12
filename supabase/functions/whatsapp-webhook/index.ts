@@ -247,14 +247,6 @@ async function handleReschedule(
     }));
   const free = computeFreeSlots(avail ?? [], occupied, slotMinutes).slice(0, 4);
 
-  if (free.length === 0) {
-    return {
-      reply: "כרגע אין שעות פנויות מתאימות. המורה יחזור אליך לתיאום 🙏",
-      action: "reschedule_no_slots",
-      who: student.name,
-    };
-  }
-
   // Replace any previous open request for this student, then store the new one.
   await supabase
     .from("reschedule_requests")
@@ -270,6 +262,16 @@ async function handleReschedule(
     kind: "reschedule",
     status: "pending_selection",
   });
+
+  // No free slot anywhere → a mutual swap may still work; ask for availability.
+  if (free.length === 0) {
+    return {
+      reply:
+        "כרגע אין חלונות פנויים 🙏 כתוב לי מתי נוח לך, אפשר כמה אפשרויות, ואבדוק אפשרות החלפה מול תלמיד אחר.",
+      action: "reschedule_ask_availability",
+      who: student.name,
+    };
+  }
 
   const lines = free.map(
     (s: FreeSlot, i: number) => `${i + 1}. ${slotLabel(s)}`,
@@ -308,8 +310,11 @@ async function handleReschedulePick(
   if (!reqRow) return null;
 
   const options = (reqRow.options ?? []) as FreeSlot[];
-  const digit = parseInt(text.trim(), 10);
-  if (isNaN(digit) || digit < 1 || digit > options.length) {
+  const trimmed = text.trim();
+  // Not a numeric pick → let availability handling take over (return null).
+  if (!/^\d+$/.test(trimmed)) return null;
+  const digit = parseInt(trimmed, 10);
+  if (digit < 1 || digit > options.length) {
     const lines = options.map((s, i) => `${i + 1}. ${slotLabel(s)}`);
     return {
       reply: "לא הבנתי את הבחירה. השב במספר מהרשימה:\n" + lines.join("\n"),
