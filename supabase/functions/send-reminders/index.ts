@@ -80,6 +80,83 @@ function rowToStudent(row: Record<string, any>): Student {
   };
 }
 
+// ─── Swap timeout sweep ─────────────────────────────────────────────────────────
+
+/**
+ * Advance any swap requests whose partner deadline has passed: move on to the
+ * next candidate (contacting them if auto-swap), or mark the request failed when
+ * no candidates remain. Safe to run frequently (e.g. hourly) on its own.
+ */
+async function runSwapSweep(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  metaToken: string,
+  phoneNumberId: string,
+): Promise<void> {
+  const nowIso = new Date().toISOString();
+  const { data: expired } = await supabase
+    .from("reschedule_requests")
+    .select("*")
+    .eq("status", "awaiting_swap_partner")
+    .lt("deadline_at", nowIso);
+  for (const reqRow of expired ?? []) {
+    const remaining = (
+      (reqRow.swap_candidate_ids ?? []) as {
+        studentId: string;
+        slot: { day: number; time: string };
+      }[]
+    ).filter((c) => c.studentId !== reqRow.swap_target_student_id);
+    if (remaining.length === 0) {
+      await supabase
+        .from("reschedule_requests")
+        .update({ status: "failed", updated_at: nowIso })
+        .eq("id", reqRow.id);
+      continue;
+    }
+    const next = remaining[0];
+    const { data: partner } = await supabase
+      .from("students")
+      .select("*")
+      .eq("id", next.studentId)
+      .maybeSingle();
+    const partnerAuto = partner?.auto_swap_ok === true;
+    // The partner is always offered A's slot; swap_target_slot stays put.
+    const aSlot = reqRow.swap_target_slot as {
+      day: number;
+      time: string;
+    } | null;
+    await supabase
+      .from("reschedule_requests")
+      .update({
+        swap_target_student_id: next.studentId,
+        selected_option: next.slot,
+        swap_candidate_ids: remaining,
+        status: partnerAuto
+          ? "awaiting_swap_partner"
+          : "pending_contact_approval",
+        deadline_at: partnerAuto
+          ? new Date(Date.now() + 5 * 3600 * 1000).toISOString()
+          : null,
+        updated_at: nowIso,
+      })
+      .eq("id", reqRow.id);
+    if (partnerAuto && partner && aSlot) {
+      try {
+        await sendTemplate(
+          metaToken,
+          phoneNumberId,
+          partner.phone || partner.contact_phone,
+          "swap_request",
+          TEMPLATE_LANG,
+          [partner.name || "היי", slotDayName(aSlot), aSlot.time],
+        );
+      } catch (err) {
+        console.error("next-candidate contact failed:", (err as Error).message);
+      }
+    }
+  }
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
@@ -128,6 +205,15 @@ Deno.serve(async (req: Request) => {
   // ── Central Meta credentials (single shared WhatsApp number) ───────────────
   const metaToken = Deno.env.get("WHAPI_TOKEN")!; // permanent Meta access token
   const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+
+  // ── Action: run ONLY the swap timeout sweep (schedule this frequently) ─────
+  if (action === "swap_sweep") {
+    await runSwapSweep(supabase, metaToken, phoneNumberId);
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
 
   // ── Action: send one payment reminder (teacher confirmed in the app) ───────
   if (action === "payment_reminder" && requestedUserId && requestedStudentId) {
@@ -372,74 +458,9 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // ── Sweep: expired swap-partner waits → next candidate or fail ─────────────
-  {
-    const nowIso = new Date().toISOString();
-    const { data: expired } = await supabase
-      .from("reschedule_requests")
-      .select("*")
-      .eq("status", "awaiting_swap_partner")
-      .lt("deadline_at", nowIso);
-    for (const reqRow of expired ?? []) {
-      const remaining = (
-        (reqRow.swap_candidate_ids ?? []) as {
-          studentId: string;
-          slot: { day: number; time: string };
-        }[]
-      ).filter((c) => c.studentId !== reqRow.swap_target_student_id);
-      if (remaining.length === 0) {
-        await supabase
-          .from("reschedule_requests")
-          .update({ status: "failed", updated_at: nowIso })
-          .eq("id", reqRow.id);
-        continue;
-      }
-      const next = remaining[0];
-      const { data: partner } = await supabase
-        .from("students")
-        .select("*")
-        .eq("id", next.studentId)
-        .maybeSingle();
-      const partnerAuto = partner?.auto_swap_ok === true;
-      // The partner is always offered A's slot; swap_target_slot stays put.
-      const aSlot = reqRow.swap_target_slot as {
-        day: number;
-        time: string;
-      } | null;
-      await supabase
-        .from("reschedule_requests")
-        .update({
-          swap_target_student_id: next.studentId,
-          selected_option: next.slot,
-          swap_candidate_ids: remaining,
-          status: partnerAuto
-            ? "awaiting_swap_partner"
-            : "pending_contact_approval",
-          deadline_at: partnerAuto
-            ? new Date(Date.now() + 5 * 3600 * 1000).toISOString()
-            : null,
-          updated_at: nowIso,
-        })
-        .eq("id", reqRow.id);
-      if (partnerAuto && partner && aSlot) {
-        try {
-          await sendTemplate(
-            metaToken,
-            phoneNumberId,
-            partner.phone || partner.contact_phone,
-            "swap_request",
-            TEMPLATE_LANG,
-            [partner.name || "היי", slotDayName(aSlot), aSlot.time],
-          );
-        } catch (err) {
-          console.error(
-            "next-candidate contact failed:",
-            (err as Error).message,
-          );
-        }
-      }
-    }
-  }
+  // Advance any swap requests whose partner deadline passed. Also runs on its
+  // own via the swap_sweep action so it can be scheduled frequently (hourly).
+  await runSwapSweep(supabase, metaToken, phoneNumberId);
 
   // ── Fetch eligible user_settings rows ─────────────────────────────────────
   let settingsQuery = supabase
