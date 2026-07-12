@@ -289,7 +289,7 @@ Deno.serve(async (req: Request) => {
       .from("reschedule_requests")
       .update({
         status: "awaiting_swap_partner",
-        deadline_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+        deadline_at: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq("id", requestId);
@@ -416,7 +416,7 @@ Deno.serve(async (req: Request) => {
             ? "awaiting_swap_partner"
             : "pending_contact_approval",
           deadline_at: partnerAuto
-            ? new Date(Date.now() + 24 * 3600 * 1000).toISOString()
+            ? new Date(Date.now() + 5 * 3600 * 1000).toISOString()
             : null,
           updated_at: nowIso,
         })

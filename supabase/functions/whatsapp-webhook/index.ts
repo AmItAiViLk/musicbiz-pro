@@ -490,7 +490,7 @@ async function handleAvailabilityReply(
         ? "awaiting_swap_partner"
         : "pending_contact_approval",
       deadline_at: partnerAuto
-        ? new Date(Date.now() + 24 * 3600 * 1000).toISOString()
+        ? new Date(Date.now() + 5 * 3600 * 1000).toISOString()
         : null,
       updated_at: new Date().toISOString(),
     })
@@ -613,7 +613,7 @@ async function advanceSwapToNextCandidate(
         ? "awaiting_swap_partner"
         : "pending_contact_approval",
       deadline_at: partnerAuto
-        ? new Date(Date.now() + 24 * 3600 * 1000).toISOString()
+        ? new Date(Date.now() + 5 * 3600 * 1000).toISOString()
         : null,
       updated_at: nowIso,
     })
