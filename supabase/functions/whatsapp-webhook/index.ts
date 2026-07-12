@@ -25,12 +25,20 @@ import { classifyIntent, type Intent } from "../_shared/classify.ts";
 import {
   computeFreeSlots,
   DEFAULT_SLOT_MINUTES,
+  findSwapCandidates,
   type FreeSlot,
   hoursUntilNextLesson,
   slotLabel,
+  slotsFittingAvailability,
 } from "../_shared/schedule.ts";
+import { extractAvailability } from "../_shared/availability.ts";
+import { sendTemplate } from "../_shared/meta.ts";
 
 const GRAPH_VERSION = "v21.0";
+
+// Proactive swap-request template (partner is usually outside the 24h window).
+const SWAP_REQUEST_TEMPLATE = "swap_request";
+const TEMPLATE_LANG = "he";
 
 // Per-intent Hebrew replies sent back to the student.
 const REPLIES: Record<Intent, string> = {
@@ -258,6 +266,7 @@ async function handleReschedule(
     student_id: student.id ?? "",
     student_phone: senderPhone,
     options: free,
+    kind: "reschedule",
     status: "pending_selection",
   });
 
@@ -266,7 +275,9 @@ async function handleReschedule(
   );
   return {
     reply:
-      "אלה השעות הפנויות. השב במספר האפשרות שמתאימה לך:\n" + lines.join("\n"),
+      "אפשר לתאם מחדש 🙏 הנה כמה מועדים פנויים:\n" +
+      lines.join("\n") +
+      "\n\nהשב במספר שמתאים, ואם אף אחד לא מתאים — כתוב לי מתי כן נוח לך ואבדוק אפשרות החלפה.",
     action: "reschedule_offered",
     who: student.name,
   };
@@ -320,6 +331,276 @@ async function handleReschedulePick(
     reply: `בחרת ${slotLabel(chosen)}. העברנו למורה לאישור, נעדכן אותך 🙏`,
     action: "reschedule_picked",
     who: senderPhone,
+  };
+}
+
+/**
+ * The student is mid-reschedule and sent free text instead of a slot number.
+ * Parse it as availability, then hunt for a one-hop swap. Returns null if the
+ * sender has no active pending_selection request (so the caller keeps routing).
+ */
+async function handleAvailabilityReply(
+  senderPhone: string,
+  text: string,
+): Promise<{ reply: string; action: string; who: string } | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const userId = Deno.env.get("DEFAULT_USER_ID");
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+  if (!supabaseUrl || !serviceKey || !userId) return null;
+  const supabase = createClient(supabaseUrl, serviceKey);
+
+  const { data: req } = await supabase
+    .from("reschedule_requests")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("student_phone", senderPhone)
+    .eq("status", "pending_selection")
+    .maybeSingle();
+  if (!req) return null;
+
+  const windows = await extractAvailability(apiKey, text);
+  if (windows.length === 0) {
+    return {
+      reply:
+        'לא הצלחתי להבין מתי נוח לך. תוכל לכתוב למשל: "פנוי בימי שני אחרי 16:00"?',
+      action: "availability_unparsed",
+      who: senderPhone,
+    };
+  }
+
+  await supabase
+    .from("reschedule_requests")
+    .update({
+      student_availability: windows,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", req.id);
+
+  // Load schedule inputs.
+  const [{ data: avail }, { data: allStudents }, { data: settings }] =
+    await Promise.all([
+      supabase
+        .from("teacher_availability")
+        .select("day_of_week, start_time, end_time")
+        .eq("user_id", userId),
+      supabase
+        .from("students")
+        .select(
+          "id, lesson_day, lesson_time, auto_swap_ok, name, phone, contact_phone",
+        )
+        .eq("user_id", userId),
+      supabase
+        .from("user_settings")
+        .select("lesson_duration_minutes")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
+  const slotMinutes = settings?.lesson_duration_minutes ?? DEFAULT_SLOT_MINUTES;
+  const occupied = (allStudents ?? [])
+    .filter((s) => s.lesson_day !== null && s.lesson_time)
+    .map((s) => ({
+      day: parseInt(String(s.lesson_day), 10),
+      time: String(s.lesson_time).slice(0, 5),
+      studentId: String(s.id),
+    }));
+
+  // First: is there now a free slot that fits their stated availability?
+  const free = computeFreeSlots(
+    avail ?? [],
+    occupied.map((o) => ({ day: o.day, time: o.time })),
+    slotMinutes,
+  );
+  const fitting = slotsFittingAvailability(free, windows, slotMinutes).slice(
+    0,
+    4,
+  );
+  if (fitting.length > 0) {
+    await supabase
+      .from("reschedule_requests")
+      .update({ options: fitting, updated_at: new Date().toISOString() })
+      .eq("id", req.id);
+    const lines = fitting.map((s, i) => `${i + 1}. ${slotLabel(s)}`);
+    return {
+      reply:
+        "מצאתי מועדים פנויים שמתאימים לך:\n" +
+        lines.join("\n") +
+        "\nהשב במספר שמתאים.",
+      action: "availability_free_offer",
+      who: senderPhone,
+    };
+  }
+
+  // Else: hunt for a swap partner.
+  const autoIds = new Set(
+    (allStudents ?? []).filter((s) => s.auto_swap_ok).map((s) => String(s.id)),
+  );
+  const candidates = findSwapCandidates(
+    avail ?? [],
+    occupied,
+    req.student_id,
+    windows,
+    slotMinutes,
+    autoIds,
+  );
+  if (candidates.length === 0) {
+    await supabase
+      .from("reschedule_requests")
+      .update({ status: "failed", updated_at: new Date().toISOString() })
+      .eq("id", req.id);
+    return {
+      reply:
+        "בדקתי ולא נמצאה כרגע אפשרות החלפה מתאימה. המורה יחזור אליך לתיאום ידני 🙏",
+      action: "swap_no_candidates",
+      who: senderPhone,
+    };
+  }
+
+  const first = candidates[0];
+  const partner = (allStudents ?? []).find(
+    (s) => String(s.id) === first.studentId,
+  );
+  const partnerAuto = autoIds.has(first.studentId);
+  await supabase
+    .from("reschedule_requests")
+    .update({
+      kind: "swap",
+      selected_option: first.slot, // the slot the rescheduling student will take
+      swap_target_student_id: first.studentId,
+      swap_candidate_ids: candidates,
+      status: partnerAuto
+        ? "awaiting_swap_partner"
+        : "pending_contact_approval",
+      deadline_at: partnerAuto
+        ? new Date(Date.now() + 24 * 3600 * 1000).toISOString()
+        : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", req.id);
+
+  if (partnerAuto && partner) {
+    // Partner consented in advance → contact now with a template.
+    const token = Deno.env.get("WHAPI_TOKEN") ?? "";
+    const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") ?? "";
+    const partnerPhone = partner.phone || partner.contact_phone;
+    try {
+      await sendTemplate(
+        token,
+        phoneNumberId,
+        partnerPhone,
+        SWAP_REQUEST_TEMPLATE,
+        TEMPLATE_LANG,
+        [partner.name || "היי", slotLabel(first.slot)],
+      );
+      await logToDb(
+        partner.name || partnerPhone,
+        "swap_partner_contacted",
+        slotLabel(first.slot),
+      );
+    } catch (err) {
+      await logToDb(
+        partner.name || partnerPhone,
+        "swap_contact_error",
+        (err as Error).message,
+      );
+    }
+    return {
+      reply: "תודה! בודק אפשרות החלפה מול תלמיד אחר ואעדכן אותך בהקדם 🙏",
+      action: "swap_hunt_auto",
+      who: senderPhone,
+    };
+  }
+
+  return {
+    reply: "תודה! בודק אפשרות החלפה ואעדכן אותך בהקדם 🙏",
+    action: "swap_hunt_pending_teacher",
+    who: senderPhone,
+  };
+}
+
+/**
+ * A student we asked to swap has replied. If we can find a free slot that fits
+ * their availability, record it and hand the full plan to the teacher. Returns
+ * null if this sender is not an active swap partner.
+ */
+async function handleSwapPartnerReply(
+  senderPhone: string,
+  text: string,
+): Promise<{ reply: string; action: string; who: string } | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const userId = Deno.env.get("DEFAULT_USER_ID");
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+  if (!supabaseUrl || !serviceKey || !userId) return null;
+  const supabase = createClient(supabaseUrl, serviceKey);
+
+  const partner = await findStudentByPhone(senderPhone);
+  if (!partner) return null;
+  const { data: req } = await supabase
+    .from("reschedule_requests")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("swap_target_student_id", partner.id)
+    .eq("status", "awaiting_swap_partner")
+    .maybeSingle();
+  if (!req) return null;
+
+  const windows = await extractAvailability(apiKey, text);
+  if (windows.length === 0) {
+    return {
+      reply: 'תודה על התשובה 🙏 תוכל לכתוב מתי נוח לך? למשל: "שלישי בבוקר".',
+      action: "swap_partner_unparsed",
+      who: partner.name,
+    };
+  }
+
+  const [{ data: avail }, { data: allStudents }, { data: settings }] =
+    await Promise.all([
+      supabase
+        .from("teacher_availability")
+        .select("day_of_week, start_time, end_time")
+        .eq("user_id", userId),
+      supabase
+        .from("students")
+        .select("id, lesson_day, lesson_time")
+        .eq("user_id", userId),
+      supabase
+        .from("user_settings")
+        .select("lesson_duration_minutes")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
+  const slotMinutes = settings?.lesson_duration_minutes ?? DEFAULT_SLOT_MINUTES;
+  const occupied = (allStudents ?? [])
+    .filter((s) => s.lesson_day !== null && s.lesson_time)
+    .map((s) => ({
+      day: parseInt(String(s.lesson_day), 10),
+      time: String(s.lesson_time).slice(0, 5),
+    }));
+  const free = computeFreeSlots(avail ?? [], occupied, slotMinutes);
+  const target = slotsFittingAvailability(free, windows, slotMinutes)[0];
+  if (!target) {
+    return {
+      reply:
+        "תודה! כרגע לא מצאתי מועד פנוי שמתאים לך. המורה יבדוק ויחזור אליך 🙏",
+      action: "swap_partner_no_slot",
+      who: partner.name,
+    };
+  }
+
+  await supabase
+    .from("reschedule_requests")
+    .update({
+      swap_target_slot: target,
+      status: "pending_approval",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", req.id);
+
+  return {
+    reply: "מעולה, תודה! מעביר את ההצעה למורה לאישור סופי ואעדכן אותך 🙏",
+    action: "swap_partner_accepted",
+    who: partner.name,
   };
 }
 
@@ -462,6 +743,49 @@ Deno.serve(async (req: Request) => {
       await logToDb(pick.who, `${pick.action}_reply`, pick.reply);
     } catch (err) {
       await logToDb(pick.who, "auto_reply_error", (err as Error).message);
+    }
+    return new Response("OK", { status: 200 });
+  }
+
+  // Is this sender a swap partner we're waiting on? (before classification)
+  const partnerReply = await handleSwapPartnerReply(senderPhone, text);
+  if (partnerReply) {
+    await logToDb(partnerReply.who, partnerReply.action, text);
+    try {
+      await sendMetaReply(
+        token,
+        phoneNumberId,
+        senderPhone,
+        partnerReply.reply,
+      );
+      await logToDb(
+        partnerReply.who,
+        `${partnerReply.action}_reply`,
+        partnerReply.reply,
+      );
+    } catch (err) {
+      await logToDb(
+        partnerReply.who,
+        "auto_reply_error",
+        (err as Error).message,
+      );
+    }
+    return new Response("OK", { status: 200 });
+  }
+
+  // Mid-reschedule free text → availability + swap hunt (before classification).
+  const availReply = await handleAvailabilityReply(senderPhone, text);
+  if (availReply) {
+    await logToDb(availReply.who, availReply.action, text);
+    try {
+      await sendMetaReply(token, phoneNumberId, senderPhone, availReply.reply);
+      await logToDb(
+        availReply.who,
+        `${availReply.action}_reply`,
+        availReply.reply,
+      );
+    } catch (err) {
+      await logToDb(availReply.who, "auto_reply_error", (err as Error).message);
     }
     return new Response("OK", { status: 200 });
   }
