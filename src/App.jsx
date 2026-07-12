@@ -263,6 +263,7 @@ function dbToStudent(row) {
     billingToStudent: row.billing_to_student ?? false,
     billingToParent: row.billing_to_parent ?? row.send_to_parent ?? true,
     paymentTrackingMode: row.payment_tracking_mode ?? "manual",
+    autoSwapOk: row.auto_swap_ok ?? false,
     progress: 0,
     nextLesson: null,
   };
@@ -288,6 +289,7 @@ function studentToDb(student, userId) {
     billing_to_student: student.billingToStudent ?? false,
     billing_to_parent: student.billingToParent ?? true,
     payment_tracking_mode: student.paymentTrackingMode ?? "manual",
+    auto_swap_ok: student.autoSwapOk ?? false,
   };
 }
 
@@ -646,6 +648,7 @@ const EMPTY_FORM = {
   billingToStudent: false,
   billingToParent: true,
   paymentTrackingMode: "manual",
+  autoSwapOk: false,
 };
 
 function StudentForm({
@@ -678,6 +681,7 @@ function StudentForm({
       billingToStudent: form.billingToStudent,
       billingToParent: form.billingToParent,
       paymentTrackingMode: form.paymentTrackingMode,
+      autoSwapOk: form.autoSwapOk,
     });
     onClose();
   }
@@ -888,6 +892,23 @@ function StudentForm({
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
+              החלפות
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-800 rounded-xl p-3">
+              <input
+                type="checkbox"
+                checked={form.autoSwapOk ?? false}
+                onChange={(e) => set("autoSwapOk", e.target.checked)}
+                className="w-4 h-4 accent-indigo-500 shrink-0"
+              />
+              <span className="text-slate-300 text-sm">
+                אפשר לבוט לפנות לתלמיד להחלפת מועד בלי לשאול אותי קודם
+              </span>
+            </label>
           </div>
 
           <div>
@@ -3762,8 +3783,10 @@ function ActivityView({ userId }) {
         .limit(50);
       const { data: reqs } = await supabase
         .from("reschedule_requests")
-        .select("id, student_id, student_phone, selected_option")
-        .eq("status", "pending_approval")
+        .select(
+          "id, student_id, kind, status, selected_option, swap_target_student_id, swap_target_slot",
+        )
+        .in("status", ["pending_approval", "pending_contact_approval"])
         .order("updated_at", { ascending: false });
       const { data: pays } = await supabase
         .from("payment_status")
@@ -3841,6 +3864,44 @@ function ActivityView({ userId }) {
       .eq("id", row.id);
   }
 
+  async function approveContact(row) {
+    setResReqs((p) => p.filter((x) => x.id !== row.id));
+    await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
+        },
+        body: JSON.stringify({
+          action: "swap_contact_approved",
+          userId,
+          requestId: row.id,
+        }),
+      },
+    );
+  }
+
+  async function approveSwap(row) {
+    setResReqs((p) => p.filter((x) => x.id !== row.id));
+    await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
+        },
+        body: JSON.stringify({
+          action: "swap_approved",
+          userId,
+          requestId: row.id,
+        }),
+      },
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto" dir="rtl">
       {resReqs.length > 0 && (
@@ -3852,7 +3913,11 @@ function ActivityView({ userId }) {
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm"
             >
               <span className="text-slate-200">
-                בקשה למועד {slotText(row.selected_option)}
+                {row.status === "pending_contact_approval"
+                  ? `לפנות לתלמיד להחלפת המועד ${slotText(row.selected_option)}?`
+                  : row.kind === "swap"
+                    ? `אישור החלפה: תלמיד עובר ל${slotText(row.swap_target_slot)}, ומתפנה ${slotText(row.selected_option)}`
+                    : `בקשה למועד ${slotText(row.selected_option)}`}
               </span>
               <div className="flex gap-2 shrink-0">
                 <button
@@ -3862,7 +3927,13 @@ function ActivityView({ userId }) {
                   דחה
                 </button>
                 <button
-                  onClick={() => approveRes(row)}
+                  onClick={() =>
+                    row.status === "pending_contact_approval"
+                      ? approveContact(row)
+                      : row.kind === "swap"
+                        ? approveSwap(row)
+                        : approveRes(row)
+                  }
                   className="text-xs font-semibold text-white bg-indigo-600 px-3 py-1.5 rounded-lg"
                 >
                   אשר
@@ -3967,7 +4038,7 @@ export default function App({ user }) {
         supabase
           .from("reschedule_requests")
           .select("id", { count: "exact", head: true })
-          .eq("status", "pending_approval"),
+          .in("status", ["pending_approval", "pending_contact_approval"]),
         supabase
           .from("payment_status")
           .select("id", { count: "exact", head: true })
@@ -4743,6 +4814,7 @@ export default function App({ user }) {
             billingToStudent: editingStudent.billingToStudent ?? false,
             billingToParent: editingStudent.billingToParent ?? true,
             paymentTrackingMode: editingStudent.paymentTrackingMode ?? "manual",
+            autoSwapOk: editingStudent.autoSwapOk ?? false,
           }}
           onSave={saveEditedStudent}
           onDelete={deleteStudent}
