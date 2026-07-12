@@ -113,43 +113,34 @@ Deno.test(
 );
 
 Deno.test(
-  "findSwapCandidates: returns students whose slot fits, auto-swap first",
+  "findSwapCandidates: occupants fitting preferences, ordered by preference",
   () => {
-    const avail = [{ day_of_week: 1, start_time: "16:00", end_time: "20:00" }];
     const occupied = [
-      { day: 1, time: "16:00", studentId: "dana" }, // the rescheduling student
-      { day: 1, time: "17:00", studentId: "yossi" }, // fits dana's availability
-      { day: 1, time: "19:30", studentId: "noa" }, // spills past window → excluded
-      { day: 2, time: "16:00", studentId: "gil" }, // wrong day → excluded
+      { day: 1, time: "16:00", studentId: "dana" }, // A herself → excluded
+      { day: 3, time: "18:00", studentId: "noa" }, // fits preference #2
+      { day: 1, time: "17:00", studentId: "yossi" }, // fits preference #1
+      { day: 2, time: "16:00", studentId: "gil" }, // no preference → excluded
     ];
-    const danaAvailability = [{ day: 1, start: "16:45", end: "18:30" }];
-    const candidates = findSwapCandidates(
-      avail,
-      occupied,
-      "dana",
-      danaAvailability,
-      45,
-      new Set(["yossi"]),
-    );
-    assertEquals(candidates, [
+    // Dana prefers Monday 16:45–18:30 first, then Wednesday 17:00–19:00.
+    const danaPrefs = [
+      { day: 1, start: "16:45", end: "18:30" },
+      { day: 3, start: "17:00", end: "19:00" },
+    ];
+    assertEquals(findSwapCandidates(occupied, "dana", danaPrefs, 45), [
       { studentId: "yossi", slot: { day: 1, time: "17:00" } },
+      { studentId: "noa", slot: { day: 3, time: "18:00" } },
     ]);
   },
 );
 
 Deno.test(
-  "findSwapCandidates: none when no free slot exists for a partner to move to",
+  "findSwapCandidates: none when no occupant fits the preferences",
   () => {
-    // Availability window holds exactly two 45-min slots, both occupied → nowhere to move.
-    const avail = [{ day_of_week: 1, start_time: "16:00", end_time: "17:30" }];
     const occupied = [
       { day: 1, time: "16:00", studentId: "dana" },
-      { day: 1, time: "16:45", studentId: "yossi" },
+      { day: 4, time: "10:00", studentId: "yossi" }, // outside dana's preference
     ];
-    const danaAvailability = [{ day: 1, start: "16:00", end: "17:30" }];
-    assertEquals(
-      findSwapCandidates(avail, occupied, "dana", danaAvailability, 45),
-      [],
-    );
+    const danaPrefs = [{ day: 1, start: "17:00", end: "19:00" }];
+    assertEquals(findSwapCandidates(occupied, "dana", danaPrefs, 45), []);
   },
 );

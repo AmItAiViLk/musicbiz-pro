@@ -3914,9 +3914,9 @@ function ActivityView({ userId }) {
             >
               <span className="text-slate-200">
                 {row.status === "pending_contact_approval"
-                  ? `לפנות לתלמיד להחלפת המועד ${slotText(row.selected_option)}?`
+                  ? `לפנות לתלמיד שמשבצתו ${slotText(row.selected_option)} ולהציע לו החלפה?`
                   : row.kind === "swap"
-                    ? `אישור החלפה: תלמיד עובר ל${slotText(row.swap_target_slot)}, ומתפנה ${slotText(row.selected_option)}`
+                    ? `אישור החלפה הדדית: המבקש עובר ל${slotText(row.selected_option)}, והשני עובר ל${slotText(row.swap_target_slot)}`
                     : `בקשה למועד ${slotText(row.selected_option)}`}
               </span>
               <div className="flex gap-2 shrink-0">

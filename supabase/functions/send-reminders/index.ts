@@ -29,6 +29,7 @@ import {
 } from "../_shared/holidays.ts";
 import {
   hebrewMonthLabel,
+  slotDayName,
   slotLabel,
   yearMonthKey,
 } from "../_shared/schedule.ts";
@@ -262,8 +263,13 @@ Deno.serve(async (req: Request) => {
       .select("*")
       .eq("id", reqRow.swap_target_student_id)
       .maybeSingle();
+    // Offer the partner the rescheduling student's slot (a mutual swap).
+    const aSlot = reqRow.swap_target_slot as {
+      day: number;
+      time: string;
+    } | null;
     let sent = 0;
-    if (partner) {
+    if (partner && aSlot) {
       const partnerPhone = partner.phone || partner.contact_phone;
       try {
         await sendTemplate(
@@ -272,7 +278,7 @@ Deno.serve(async (req: Request) => {
           partnerPhone,
           "swap_request",
           TEMPLATE_LANG,
-          [partner.name || "היי", slotLabel(reqRow.selected_option)],
+          [partner.name || "היי", slotDayName(aSlot), aSlot.time],
         );
         sent = 1;
       } catch (err) {
@@ -316,7 +322,7 @@ Deno.serve(async (req: Request) => {
       );
     }
     const sMove = reqRow.selected_option as { day: number; time: string }; // rescheduling student → partner's old slot
-    const pMove = reqRow.swap_target_slot as { day: number; time: string }; // partner → chosen free slot
+    const pMove = reqRow.swap_target_slot as { day: number; time: string }; // partner → rescheduling student's old slot
 
     await supabase
       .from("students")
@@ -395,13 +401,17 @@ Deno.serve(async (req: Request) => {
         .eq("id", next.studentId)
         .maybeSingle();
       const partnerAuto = partner?.auto_swap_ok === true;
+      // The partner is always offered A's slot; swap_target_slot stays put.
+      const aSlot = reqRow.swap_target_slot as {
+        day: number;
+        time: string;
+      } | null;
       await supabase
         .from("reschedule_requests")
         .update({
           swap_target_student_id: next.studentId,
           selected_option: next.slot,
           swap_candidate_ids: remaining,
-          swap_target_slot: null,
           status: partnerAuto
             ? "awaiting_swap_partner"
             : "pending_contact_approval",
@@ -411,7 +421,7 @@ Deno.serve(async (req: Request) => {
           updated_at: nowIso,
         })
         .eq("id", reqRow.id);
-      if (partnerAuto && partner) {
+      if (partnerAuto && partner && aSlot) {
         try {
           await sendTemplate(
             metaToken,
@@ -419,7 +429,7 @@ Deno.serve(async (req: Request) => {
             partner.phone || partner.contact_phone,
             "swap_request",
             TEMPLATE_LANG,
-            [partner.name || "היי", slotLabel(next.slot)],
+            [partner.name || "היי", slotDayName(aSlot), aSlot.time],
           );
         } catch (err) {
           console.error(
