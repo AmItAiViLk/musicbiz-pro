@@ -150,3 +150,92 @@ export function computeFreeSlots(
 export function slotLabel(slot: FreeSlot): string {
   return `יום ${SLOT_DAYS[slot.day] ?? "?"} ${slot.time}`;
 }
+
+// ─── Swap-candidate logic (reschedule Layer 2) ──────────────────────────────────
+
+export interface AvailabilityWindow {
+  day: number; // 0=Sun … 6=Sat
+  start: string; // 'HH:MM'
+  end: string; // 'HH:MM'
+}
+
+export interface SwapCandidate {
+  studentId: string;
+  slot: FreeSlot;
+}
+
+function hhmmToMin(t: string): number {
+  const [h, m] = t.split(":").map((x) => parseInt(x, 10));
+  return h * 60 + m;
+}
+
+/** True if the whole [time, time+slotMinutes) fits within one availability window. */
+export function slotFitsAvailability(
+  slot: FreeSlot,
+  windows: AvailabilityWindow[],
+  slotMinutes: number = DEFAULT_SLOT_MINUTES,
+): boolean {
+  const start = hhmmToMin(slot.time);
+  const end = start + slotMinutes;
+  return windows.some(
+    (w) =>
+      w.day === slot.day &&
+      start >= hhmmToMin(w.start) &&
+      end <= hhmmToMin(w.end),
+  );
+}
+
+/** Subset of free slots that fall within the given availability windows. */
+export function slotsFittingAvailability(
+  free: FreeSlot[],
+  windows: AvailabilityWindow[],
+  slotMinutes: number = DEFAULT_SLOT_MINUTES,
+): FreeSlot[] {
+  return free.filter((s) => slotFitsAvailability(s, windows, slotMinutes));
+}
+
+/**
+ * One-hop swap candidates: students whose current slot fits the rescheduling
+ * student's availability AND for whom at least one free slot exists to move to.
+ * Candidates with `auto_swap_ok` (in autoSwapIds) are returned first.
+ */
+export function findSwapCandidates(
+  availability: {
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+  }[],
+  occupied: { day: number; time: string; studentId: string }[],
+  reschedulingStudentId: string,
+  studentAvailability: AvailabilityWindow[],
+  slotMinutes: number = DEFAULT_SLOT_MINUTES,
+  autoSwapIds: Set<string> = new Set(),
+): SwapCandidate[] {
+  const free = computeFreeSlots(
+    availability,
+    occupied.map((o) => ({ day: o.day, time: o.time })),
+    slotMinutes,
+  );
+  if (free.length === 0) return []; // nowhere for a partner to move
+
+  const candidates = occupied
+    .filter(
+      (o) =>
+        o.studentId !== reschedulingStudentId &&
+        slotFitsAvailability(
+          { day: o.day, time: o.time },
+          studentAvailability,
+          slotMinutes,
+        ),
+    )
+    .map((o) => ({
+      studentId: o.studentId,
+      slot: { day: o.day, time: o.time },
+    }));
+
+  return candidates.sort(
+    (a, b) =>
+      Number(autoSwapIds.has(b.studentId)) -
+      Number(autoSwapIds.has(a.studentId)),
+  );
+}

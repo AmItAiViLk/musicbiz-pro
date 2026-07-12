@@ -1,9 +1,11 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   computeFreeSlots,
+  findSwapCandidates,
   hebrewMonthLabel,
   hoursUntilNextLesson,
   isBeyond24h,
+  slotFitsAvailability,
   slotLabel,
   yearMonthKey,
 } from "./schedule.ts";
@@ -88,3 +90,66 @@ Deno.test("computeFreeSlots: no room for a full slot yields nothing", () => {
 Deno.test("slotLabel formats day + time in Hebrew", () => {
   assertEquals(slotLabel({ day: 1, time: "09:00" }), "יום שני 09:00");
 });
+
+Deno.test("slotFitsAvailability: slot inside a window fits", () => {
+  const windows = [{ day: 1, start: "16:00", end: "20:00" }];
+  assertEquals(slotFitsAvailability({ day: 1, time: "16:00" }, windows), true);
+  assertEquals(slotFitsAvailability({ day: 1, time: "19:15" }, windows), true); // 19:15-20:00
+});
+
+Deno.test(
+  "slotFitsAvailability: slot spilling past the window does not fit",
+  () => {
+    const windows = [{ day: 1, start: "16:00", end: "20:00" }];
+    assertEquals(
+      slotFitsAvailability({ day: 1, time: "19:30" }, windows),
+      false,
+    ); // ends 20:15
+    assertEquals(
+      slotFitsAvailability({ day: 2, time: "16:00" }, windows),
+      false,
+    ); // wrong day
+  },
+);
+
+Deno.test(
+  "findSwapCandidates: returns students whose slot fits, auto-swap first",
+  () => {
+    const avail = [{ day_of_week: 1, start_time: "16:00", end_time: "20:00" }];
+    const occupied = [
+      { day: 1, time: "16:00", studentId: "dana" }, // the rescheduling student
+      { day: 1, time: "17:00", studentId: "yossi" }, // fits dana's availability
+      { day: 1, time: "19:30", studentId: "noa" }, // spills past window → excluded
+      { day: 2, time: "16:00", studentId: "gil" }, // wrong day → excluded
+    ];
+    const danaAvailability = [{ day: 1, start: "16:45", end: "18:30" }];
+    const candidates = findSwapCandidates(
+      avail,
+      occupied,
+      "dana",
+      danaAvailability,
+      45,
+      new Set(["yossi"]),
+    );
+    assertEquals(candidates, [
+      { studentId: "yossi", slot: { day: 1, time: "17:00" } },
+    ]);
+  },
+);
+
+Deno.test(
+  "findSwapCandidates: none when no free slot exists for a partner to move to",
+  () => {
+    // Availability window holds exactly two 45-min slots, both occupied → nowhere to move.
+    const avail = [{ day_of_week: 1, start_time: "16:00", end_time: "17:30" }];
+    const occupied = [
+      { day: 1, time: "16:00", studentId: "dana" },
+      { day: 1, time: "16:45", studentId: "yossi" },
+    ];
+    const danaAvailability = [{ day: 1, start: "16:00", end: "17:30" }];
+    assertEquals(
+      findSwapCandidates(avail, occupied, "dana", danaAvailability, 45),
+      [],
+    );
+  },
+);
