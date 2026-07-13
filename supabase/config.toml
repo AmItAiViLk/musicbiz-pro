@@ -1,0 +1,15 @@
+# Supabase project config.
+# Pins per-function JWT verification so redeploys can't accidentally flip it:
+#   - whatsapp-webhook: called by Meta (no Supabase JWT) → must stay OFF
+#   - send-reminders:   called with the AUTOMATION_SECRET bearer → OFF
+#   - gcal-oauth:        called from the frontend with the user JWT → ON
+project_id = "tyckebaxdgqscxbpilqm"
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.send-reminders]
+verify_jwt = false
+
+[functions.gcal-oauth]
+verify_jwt = true
