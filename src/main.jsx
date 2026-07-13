@@ -42,3 +42,11 @@ createRoot(document.getElementById("root")).render(
     <Root />
   </StrictMode>,
 );
+
+// Register the PWA service worker (installable + faster loads). Dev-safe: the
+// SW file is served from /public, so this only does anything once deployed.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
