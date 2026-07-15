@@ -4031,9 +4031,11 @@ export default function App({ user }) {
   const [pendingCount, setPendingCount] = useState(0); // items needing the teacher's attention (for the bell dot)
 
   // Count unhandled items so the bell dot shows only when there's something to do.
+  // Refresh on tab change, every 30s, and whenever the window regains focus, so a
+  // request that arrives while the app is open still lights up the dot promptly.
   useEffect(() => {
     let active = true;
-    (async () => {
+    async function refreshPending() {
       const [resReq, payReq] = await Promise.all([
         supabase
           .from("reschedule_requests")
@@ -4045,9 +4047,14 @@ export default function App({ user }) {
           .eq("reminder_state", "pending_confirm"),
       ]);
       if (active) setPendingCount((resReq.count || 0) + (payReq.count || 0));
-    })();
+    }
+    refreshPending();
+    const interval = setInterval(refreshPending, 30000);
+    window.addEventListener("focus", refreshPending);
     return () => {
       active = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", refreshPending);
     };
   }, [activeTab]);
 
