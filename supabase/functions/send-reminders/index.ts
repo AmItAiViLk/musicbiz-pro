@@ -166,12 +166,26 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 204, headers: CORS });
   }
 
-  // ── Auth: validate AUTOMATION_SECRET ──────────────────────────────────────
+  // ── Supabase admin client (also used to validate user JWTs) ────────────────
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, serviceKey);
+
+  // ── Auth: accept the AUTOMATION_SECRET (cron/server) OR a valid Supabase
+  //    user JWT (a logged-in teacher acting from the app). No shared secret
+  //    lives in the client bundle anymore. ─────────────────────────────────────
   const automationSecret = Deno.env.get("AUTOMATION_SECRET");
   const authHeader = req.headers.get("Authorization") ?? "";
   const bearerToken = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-  if (!automationSecret || bearerToken !== automationSecret) {
+  let authed = !!automationSecret && bearerToken === automationSecret;
+  if (!authed && bearerToken) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(bearerToken);
+    authed = !!user;
+  }
+  if (!authed) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...CORS, "Content-Type": "application/json" },
@@ -197,11 +211,6 @@ Deno.serve(async (req: Request) => {
   } catch {
     // Non-JSON body is fine (pg_cron sends no body)
   }
-
-  // ── Supabase admin client ──────────────────────────────────────────────────
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceKey);
 
   // ── Central Meta credentials (single shared WhatsApp number) ───────────────
   const metaToken = Deno.env.get("WHAPI_TOKEN")!; // permanent Meta access token

@@ -3110,14 +3110,7 @@ function SettingsView({
     setTestingAutomation(true);
     setTestResult(null);
     try {
-      const res = await fetch(`${supabaseUrl}/functions/v1/send-reminders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
-        },
-        body: JSON.stringify({ test: true, userId }),
-      });
+      const res = await invokeSendReminders({ test: true, userId });
       const data = await res.json().catch(() => ({}));
       setTestResult(
         res.ok
@@ -3743,6 +3736,25 @@ const ACTIVITY_TYPES = Object.keys(ACTIVITY_LABELS);
 const RES_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 const slotText = (o) => (o ? `יום ${RES_DAYS[o.day] ?? "?"} ${o.time}` : "");
 
+// Call the send-reminders Edge Function authenticated as the logged-in user
+// (their Supabase JWT). Keeps any shared secret out of the client bundle.
+async function invokeSendReminders(body) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
 function ActivityView({ userId }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3789,21 +3801,11 @@ function ActivityView({ userId }) {
 
   async function confirmSendReminder(row) {
     setPayReqs((p) => p.filter((x) => x.id !== row.id));
-    await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
-        },
-        body: JSON.stringify({
-          action: "payment_reminder",
-          userId,
-          studentId: row.student_id,
-        }),
-      },
-    );
+    await invokeSendReminders({
+      action: "payment_reminder",
+      userId,
+      studentId: row.student_id,
+    });
   }
 
   async function markPendingPaid(row) {
@@ -3821,21 +3823,11 @@ function ActivityView({ userId }) {
 
   async function approveRes(row) {
     setResReqs((p) => p.filter((x) => x.id !== row.id));
-    await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
-        },
-        body: JSON.stringify({
-          action: "reschedule_approved",
-          userId,
-          requestId: row.id,
-        }),
-      },
-    );
+    await invokeSendReminders({
+      action: "reschedule_approved",
+      userId,
+      requestId: row.id,
+    });
   }
 
   async function rejectRes(row) {
@@ -3848,40 +3840,20 @@ function ActivityView({ userId }) {
 
   async function approveContact(row) {
     setResReqs((p) => p.filter((x) => x.id !== row.id));
-    await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
-        },
-        body: JSON.stringify({
-          action: "swap_contact_approved",
-          userId,
-          requestId: row.id,
-        }),
-      },
-    );
+    await invokeSendReminders({
+      action: "swap_contact_approved",
+      userId,
+      requestId: row.id,
+    });
   }
 
   async function approveSwap(row) {
     setResReqs((p) => p.filter((x) => x.id !== row.id));
-    await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reminders`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_AUTOMATION_SECRET}`,
-        },
-        body: JSON.stringify({
-          action: "swap_approved",
-          userId,
-          requestId: row.id,
-        }),
-      },
-    );
+    await invokeSendReminders({
+      action: "swap_approved",
+      userId,
+      requestId: row.id,
+    });
   }
 
   return (
