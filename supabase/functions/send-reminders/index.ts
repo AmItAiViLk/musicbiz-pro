@@ -2,7 +2,8 @@
  * send-reminders/index.ts — Deno Edge Function
  *
  * Triggered either by pg_cron (automated daily run) or by the Settings UI
- * (manual test). Sends WhatsApp reminders and billing messages via Whapi.cloud.
+ * (manual test). Sends WhatsApp reminders and billing messages via the Meta
+ * WhatsApp Cloud API.
  *
  * Expected request:
  *   POST /send-reminders

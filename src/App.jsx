@@ -3374,7 +3374,7 @@ function SettingsView({
             <div className="flex-1 min-w-0">
               <p className="font-bold text-slate-100">WhatsApp Automation</p>
               <p className="text-xs text-slate-500">
-                תזכורות וחיובים אוטומטיים דרך Whapi.cloud
+                תזכורות וחיובים אוטומטיים בוואטסאפ
               </p>
             </div>
             {/* Global toggle */}
@@ -3400,24 +3400,6 @@ function SettingsView({
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Whapi Token
-              </label>
-              <input
-                type="password"
-                value={form.whapiToken || ""}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, whapiToken: e.target.value }))
-                }
-                placeholder="whapi_..."
-                dir="ltr"
-                className={inp}
-              />
-              <p className="text-[11px] text-slate-600 mt-1.5">
-                נמצא ב-Whapi.cloud → Channel → Token
-              </p>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
                 Webhook Secret
               </label>
               <input
@@ -3437,7 +3419,7 @@ function SettingsView({
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Webhook URL (העתק ל-Whapi)
+                Webhook URL
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -3469,7 +3451,7 @@ function SettingsView({
                 </button>
               </div>
               <p className="text-[11px] text-slate-600 mt-1.5">
-                הדבק את ה-URL הזה בהגדרות ה-Webhook ב-Whapi.cloud
+                כתובת ה-Webhook, מוגדרת בלוח הבקרה של מטא
               </p>
             </div>
 
@@ -4015,7 +3997,6 @@ export default function App({ user }) {
     googleClientId: "",
     morningKey: "",
     morningSecret: "",
-    whapiToken: "",
     webhookSecret: "",
     automationEnabled: false,
     paymentTrackingMode: "manual",
@@ -4143,7 +4124,6 @@ export default function App({ user }) {
           googleClientId: settingsData.google_client_id || "",
           morningKey: settingsData.morning_key || "",
           morningSecret: settingsData.morning_secret || "",
-          whapiToken: settingsData.whapi_token || "",
           webhookSecret: settingsData.webhook_secret || "",
           automationEnabled: settingsData.automation_enabled ?? false,
           paymentTrackingMode: settingsData.payment_tracking_mode ?? "manual",
@@ -4313,7 +4293,6 @@ export default function App({ user }) {
         google_client_id: newSettings.googleClientId,
         morning_key: newSettings.morningKey,
         morning_secret: newSettings.morningSecret,
-        whapi_token: newSettings.whapiToken,
         webhook_secret: newSettings.webhookSecret,
         automation_enabled: newSettings.automationEnabled,
         payment_tracking_mode: newSettings.paymentTrackingMode,
