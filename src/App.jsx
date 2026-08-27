@@ -621,7 +621,7 @@ function WhatsAppButton({ phone }) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className="inline-flex items-center justify-center w-7 h-7 text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
+      className="inline-flex items-center justify-center w-7 h-7 text-emerald-400 hover:text-emerald-700 transition-colors shrink-0"
       title="פתח WhatsApp"
     >
       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -1094,7 +1094,7 @@ function TodayRemindersPanel({ students }) {
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            <p className="text-sm font-bold text-amber-300">
+            <p className="text-sm font-bold text-amber-600">
               {dueToday.length} תזכורות לשלוח היום
             </p>
           </div>
@@ -1243,7 +1243,7 @@ function MovedLessonModal({
           <button
             onClick={sendWa}
             disabled={!newDay || !newTime || !hasTarget}
-            className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-slate-900 text-sm font-bold py-2.5 rounded-xl transition-colors"
+            className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
           >
             שלח WhatsApp
           </button>
@@ -1357,7 +1357,7 @@ function CalChangesModal({ changes, onClose }) {
                   >
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
-                  <span className="text-amber-300 font-semibold">
+                  <span className="text-amber-600 font-semibold">
                     {newDay} {c.newTime}
                   </span>
                 </div>
@@ -1581,7 +1581,7 @@ function ScheduleView({
                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/40"
                         : isToday
                           ? "bg-slate-100 text-indigo-400 border border-indigo-500/40"
-                          : "bg-slate-900 text-slate-500 border border-slate-200"
+                          : "bg-white text-slate-500 border border-slate-200"
                     } ${!hasStudents && selectedDay !== i ? "opacity-40" : ""}`}
                   >
                     {day}
@@ -1658,7 +1658,7 @@ function ScheduleView({
             <table className="w-full text-sm border-collapse min-w-[560px]">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 w-16 bg-slate-900">
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 w-16 bg-slate-100">
                     שעה
                   </th>
                   {DAYS.map((day, i) => {
@@ -2327,7 +2327,7 @@ function StudentsView({
                                 buildReminderMessage(student, role),
                               )
                             }
-                            className={`flex-1 flex items-center justify-center gap-1 text-xs font-semibold border rounded-xl py-2 transition-all ${isReminderDueToday(student) ? "text-amber-300 border-amber-500/50 bg-amber-500/10" : "text-emerald-400 border-slate-200 hover:border-emerald-500/50 hover:bg-emerald-500/10"}`}
+                            className={`flex-1 flex items-center justify-center gap-1 text-xs font-semibold border rounded-xl py-2 transition-all ${isReminderDueToday(student) ? "text-amber-600 border-amber-500/50 bg-amber-500/10" : "text-emerald-400 border-slate-200 hover:border-emerald-500/50 hover:bg-emerald-500/10"}`}
                           >
                             <svg
                               className="w-3.5 h-3.5"
@@ -2977,7 +2977,7 @@ function InvoicesView({ students, settings = {}, userId }) {
                     {hasTarget && (
                       <button
                         onClick={() => sendWa(s)}
-                        className="text-emerald-400 hover:text-emerald-300"
+                        className="text-emerald-400 hover:text-emerald-700"
                       >
                         <svg
                           className="w-4 h-4"
@@ -3286,7 +3286,7 @@ function SettingsView({
                 >
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <p className="text-sm text-emerald-300 flex-1">
+                <p className="text-sm text-emerald-700 flex-1">
                   חשבון Google מחובר
                 </p>
                 <button
@@ -3640,7 +3640,7 @@ function SettingsView({
                     <button
                       type="button"
                       onClick={() => addWindow(day)}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
+                      className="text-xs text-indigo-400 hover:text-indigo-600 transition-colors flex items-center gap-1"
                     >
                       <svg
                         className="w-3.5 h-3.5"
@@ -3875,7 +3875,7 @@ function ActivityView({ userId }) {
     <div className="max-w-2xl mx-auto" dir="rtl">
       {resReqs.length > 0 && (
         <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl p-4 space-y-3 mb-4">
-          <p className="text-sm font-bold text-indigo-300">בקשות תיאום מחדש</p>
+          <p className="text-sm font-bold text-indigo-600">בקשות תיאום מחדש</p>
           {resReqs.map((row) => (
             <div
               key={row.id}
@@ -3914,7 +3914,7 @@ function ActivityView({ userId }) {
       )}
       {payReqs.length > 0 && (
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3 mb-4">
-          <p className="text-sm font-bold text-amber-300">
+          <p className="text-sm font-bold text-amber-600">
             אישורי תשלום ממתינים
           </p>
           {payReqs.map((row) => (
@@ -4547,7 +4547,7 @@ export default function App({ user }) {
     <div className="flex h-dvh bg-[#f7f2ea] overflow-hidden" dir="rtl">
       {/* ── Sidebar ── */}
       <aside
-        className={`${sidebarOpen ? "w-56" : "w-14"} bg-[#111117] border-l border-black/[0.07] flex flex-col transition-all duration-300 shrink-0 hidden sm:flex`}
+        className={`${sidebarOpen ? "w-56" : "w-14"} bg-[#ffffff] border-l border-black/[0.07] flex flex-col transition-all duration-300 shrink-0 hidden sm:flex`}
       >
         <div className="flex items-center gap-3 px-4 py-5 border-b border-black/[0.07]">
           <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0">
@@ -4572,7 +4572,7 @@ export default function App({ user }) {
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-right ${
                 activeTab === item.id
-                  ? "bg-indigo-500/[0.12] text-indigo-300"
+                  ? "bg-indigo-500/[0.12] text-indigo-600"
                   : "text-slate-500 hover:bg-black/[0.05] hover:text-slate-800"
               }`}
             >
@@ -4613,7 +4613,7 @@ export default function App({ user }) {
       {/* ── Main ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="bg-[#111117] border-b border-black/[0.07] px-4 sm:px-6 py-3.5 flex items-center gap-3 shrink-0">
+        <header className="bg-[#ffffff] border-b border-black/[0.07] px-4 sm:px-6 py-3.5 flex items-center gap-3 shrink-0">
           <button
             onClick={() => setSidebarOpen((o) => !o)}
             className="p-1.5 rounded-xl text-slate-500 hover:bg-black/[0.05] hover:text-slate-900 transition-colors hidden sm:block"
@@ -4700,8 +4700,8 @@ export default function App({ user }) {
           <div
             className={`mx-4 mt-3 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border ${
               syncMsg.type === "success"
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                : "bg-red-500/10 border-red-500/30 text-red-300"
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
+                : "bg-red-500/10 border-red-500/30 text-red-600"
             }`}
           >
             <svg
@@ -4730,13 +4730,13 @@ export default function App({ user }) {
         </main>
 
         {/* ── Mobile bottom nav ── */}
-        <nav className="sm:hidden bg-[#111117] border-t border-black/[0.06] flex shrink-0 safe-bottom">
+        <nav className="sm:hidden bg-[#ffffff] border-t border-black/[0.06] flex shrink-0 safe-bottom">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors ${
-                activeTab === item.id ? "text-indigo-300" : "text-slate-600"
+                activeTab === item.id ? "text-indigo-600" : "text-slate-600"
               }`}
             >
               {item.icon}
