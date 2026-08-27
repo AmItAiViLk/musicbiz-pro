@@ -1450,9 +1450,13 @@ function ScheduleView({
     {
       label: "שיעורים היום",
       value: todayStudents.length,
-      color: "text-emerald-400",
+      color: "text-indigo-400",
     },
-    { label: "תלמידים פעילים", value: students.length, color: "text-blue-400" },
+    {
+      label: "תלמידים פעילים",
+      value: students.length,
+      color: "text-indigo-400",
+    },
   ];
 
   const emptyState = (
@@ -2338,7 +2342,7 @@ function StudentsView({
                               )
                             }
                             title={`${monthlyCount} שיעורים · ₪${monthlyTotal}`}
-                            className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-indigo-400 border border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl py-2 transition-all"
+                            className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-emerald-400 border border-slate-700 hover:border-emerald-500/50 hover:bg-emerald-500/10 rounded-xl py-2 transition-all"
                           >
                             <svg
                               className="w-3.5 h-3.5"
@@ -2357,7 +2361,7 @@ function StudentsView({
                         <button
                           onClick={(e) => handleSyncOne(student, e)}
                           disabled={syncing[student.id]}
-                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-blue-400 border border-slate-700 hover:border-blue-500/50 hover:bg-blue-500/10 rounded-xl py-2 transition-all disabled:opacity-50"
+                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-indigo-400 border border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl py-2 transition-all disabled:opacity-50"
                         >
                           <svg
                             className={`w-3.5 h-3.5 ${syncing[student.id] ? "animate-spin" : ""}`}
@@ -2378,7 +2382,7 @@ function StudentsView({
                       <div className="flex gap-2">
                         <button
                           onClick={() => setMovedStudent(student)}
-                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-amber-400 border border-slate-700 hover:border-amber-500/50 hover:bg-amber-500/10 rounded-xl py-1.5 transition-all"
+                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-indigo-400 border border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl py-1.5 transition-all"
                         >
                           <svg
                             className="w-3 h-3"
