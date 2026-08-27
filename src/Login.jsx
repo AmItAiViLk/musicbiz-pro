@@ -44,7 +44,7 @@ export default function Login() {
   return (
     <div
       className="min-h-dvh flex items-center justify-center p-6"
-      style={{ background: "#0d0d11" }}
+      style={{ background: "#f7f2ea" }}
       dir="rtl"
     >
       <div className="w-full max-w-[360px] space-y-6">
@@ -59,7 +59,7 @@ export default function Login() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
               Tempo
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "#64748b" }}>
@@ -72,15 +72,20 @@ export default function Login() {
         <div
           className="rounded-2xl p-6 space-y-4"
           style={{
-            background: "#16161d",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "#ffffff",
+            border: "1px solid rgba(0,0,0,0.1)",
           }}
         >
           {/* Google */}
           <button
             onClick={handleGoogle}
             className="w-full flex items-center justify-center gap-3 rounded-xl py-2.5 text-sm font-semibold transition-colors"
-            style={{ background: "#ffffff", color: "#111", fontSize: "14px" }}
+            style={{
+              background: "#ffffff",
+              color: "#111",
+              fontSize: "14px",
+              border: "1px solid rgba(0,0,0,0.12)",
+            }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f8f8")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
           >
@@ -108,14 +113,14 @@ export default function Login() {
           <div className="flex items-center gap-3">
             <div
               className="flex-1 h-px"
-              style={{ background: "rgba(255,255,255,0.07)" }}
+              style={{ background: "rgba(0,0,0,0.08)" }}
             />
             <span className="text-xs" style={{ color: "#475569" }}>
               או
             </span>
             <div
               className="flex-1 h-px"
-              style={{ background: "rgba(255,255,255,0.07)" }}
+              style={{ background: "rgba(0,0,0,0.08)" }}
             />
           </div>
 
@@ -127,17 +132,15 @@ export default function Login() {
               placeholder="אימייל"
               required
               dir="ltr"
-              className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+              className="w-full rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(0,0,0,0.03)",
+                border: "1px solid rgba(0,0,0,0.1)",
               }}
               onFocus={(e) =>
                 (e.target.style.borderColor = "rgba(99,102,241,0.5)")
               }
-              onBlur={(e) =>
-                (e.target.style.borderColor = "rgba(255,255,255,0.08)")
-              }
+              onBlur={(e) => (e.target.style.borderColor = "rgba(0,0,0,0.1)")}
             />
             <input
               type="password"
@@ -146,17 +149,15 @@ export default function Login() {
               placeholder="סיסמה"
               required
               dir="ltr"
-              className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+              className="w-full rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(0,0,0,0.03)",
+                border: "1px solid rgba(0,0,0,0.1)",
               }}
               onFocus={(e) =>
                 (e.target.style.borderColor = "rgba(99,102,241,0.5)")
               }
-              onBlur={(e) =>
-                (e.target.style.borderColor = "rgba(255,255,255,0.08)")
-              }
+              onBlur={(e) => (e.target.style.borderColor = "rgba(0,0,0,0.1)")}
             />
 
             {error && (

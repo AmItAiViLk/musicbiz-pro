@@ -27,7 +27,7 @@ function Root() {
   // Loading spinner while checking session
   if (session === undefined) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#0d0d11]">
+      <div className="min-h-dvh flex items-center justify-center bg-[#f7f2ea]">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );

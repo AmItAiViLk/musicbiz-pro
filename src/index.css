@@ -2,17 +2,18 @@
 
 @theme {
   --font-sans: "Heebo", sans-serif;
-  --color-surface: #16161d;
-  --color-surface-raised: #1c1c24;
-  --color-base: #0d0d11;
+  /* Warm light theme surfaces */
+  --color-surface: #ffffff; /* cards */
+  --color-surface-raised: #f3ece2; /* raised chips */
+  --color-base: #f7f2ea; /* page background (warm cream) */
 }
 
 body {
-  background: #0d0d11;
-  color: #f1f5f9;
+  background: #f7f2ea;
+  color: #2b2333;
 }
 
-/* Slim scrollbar */
+/* Slim scrollbar (dark thumb on the light ground) */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -21,14 +22,14 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.28);
-  color: #f1f5f9;
+  background: rgba(124, 58, 237, 0.22);
+  color: #2b2333;
 }

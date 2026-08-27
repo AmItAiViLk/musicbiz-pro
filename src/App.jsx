@@ -559,7 +559,7 @@ function QuickImportBox({ onImport }) {
   }
 
   return (
-    <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-4 space-y-3">
+    <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-4 space-y-3">
       <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
         ייבוא מהיר
       </p>
@@ -569,7 +569,7 @@ function QuickImportBox({ onImport }) {
         placeholder={"ישראל - שני 16:00\nשרה - שלישי 17:30"}
         rows={3}
         dir="rtl"
-        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition resize-none font-mono"
+        className="w-full bg-black/[0.04] border border-black/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition resize-none font-mono"
       />
 
       {valid.length > 0 && (
@@ -577,8 +577,8 @@ function QuickImportBox({ onImport }) {
           {valid.map((s, i) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              <span className="text-white font-semibold">{s.name}</span>
-              <span className="text-slate-400">
+              <span className="text-slate-900 font-semibold">{s.name}</span>
+              <span className="text-slate-500">
                 {DAYS[parseInt(s.lessonDay)]} {s.lessonTime}
               </span>
             </div>
@@ -594,7 +594,7 @@ function QuickImportBox({ onImport }) {
             ? "bg-emerald-600 text-white"
             : valid.length > 0
               ? "bg-indigo-600 hover:bg-indigo-500 text-white"
-              : "bg-slate-800 text-slate-600 cursor-not-allowed"
+              : "bg-slate-100 text-slate-600 cursor-not-allowed"
         }`}
       >
         {done
@@ -687,14 +687,14 @@ function StudentForm({
   }
 
   const inp =
-    "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition";
-  const lbl = "block text-xs font-medium text-slate-400 mb-1.5";
+    "w-full bg-black/[0.04] border border-black/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition";
+  const lbl = "block text-xs font-medium text-slate-500 mb-1.5";
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-[#16161d] border border-white/[0.07] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92dvh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0">
-          <h3 className="font-bold text-white text-base">{title}</h3>
+      <div className="bg-[#ffffff] border border-black/[0.07] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92dvh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+          <h3 className="font-bold text-slate-900 text-base">{title}</h3>
           <div className="flex items-center gap-1">
             {onDelete && !confirmDelete && (
               <button
@@ -719,7 +719,7 @@ function StudentForm({
             )}
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors"
+              className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-black/[0.05] rounded-xl transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -820,8 +820,8 @@ function StudentForm({
               שליחת הודעות
             </p>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="bg-slate-800 rounded-xl p-2.5 space-y-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div className="bg-slate-100 rounded-xl p-2.5 space-y-2">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                   תזכורות
                 </p>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -831,7 +831,7 @@ function StudentForm({
                     onChange={(e) => set("reminderToStudent", e.target.checked)}
                     className="w-4 h-4 accent-indigo-500 shrink-0"
                   />
-                  <span className="text-slate-300">לתלמיד</span>
+                  <span className="text-slate-700">לתלמיד</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -840,11 +840,11 @@ function StudentForm({
                     onChange={(e) => set("reminderToParent", e.target.checked)}
                     className="w-4 h-4 accent-indigo-500 shrink-0"
                   />
-                  <span className="text-slate-300">להורה</span>
+                  <span className="text-slate-700">להורה</span>
                 </label>
               </div>
-              <div className="bg-slate-800 rounded-xl p-2.5 space-y-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div className="bg-slate-100 rounded-xl p-2.5 space-y-2">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                   חיוב
                 </p>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -854,7 +854,7 @@ function StudentForm({
                     onChange={(e) => set("billingToStudent", e.target.checked)}
                     className="w-4 h-4 accent-indigo-500 shrink-0"
                   />
-                  <span className="text-slate-300">לתלמיד</span>
+                  <span className="text-slate-700">לתלמיד</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -863,7 +863,7 @@ function StudentForm({
                     onChange={(e) => set("billingToParent", e.target.checked)}
                     className="w-4 h-4 accent-indigo-500 shrink-0"
                   />
-                  <span className="text-slate-300">להורה</span>
+                  <span className="text-slate-700">להורה</span>
                 </label>
               </div>
             </div>
@@ -885,7 +885,7 @@ function StudentForm({
                   className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
                     (form.paymentTrackingMode || "manual") === o.v
                       ? "bg-indigo-600 border-indigo-500 text-white"
-                      : "bg-slate-800 border-slate-700 text-slate-300"
+                      : "bg-slate-100 border-slate-200 text-slate-700"
                   }`}
                 >
                   {o.label}
@@ -898,14 +898,14 @@ function StudentForm({
             <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
               החלפות
             </p>
-            <label className="flex items-center gap-2 cursor-pointer bg-slate-800 rounded-xl p-3">
+            <label className="flex items-center gap-2 cursor-pointer bg-slate-100 rounded-xl p-3">
               <input
                 type="checkbox"
                 checked={form.autoSwapOk ?? false}
                 onChange={(e) => set("autoSwapOk", e.target.checked)}
                 className="w-4 h-4 accent-indigo-500 shrink-0"
               />
-              <span className="text-slate-300 text-sm">
+              <span className="text-slate-700 text-sm">
                 אפשר לבוט לפנות לתלמיד להחלפת מועד בלי לשאול אותי קודם
               </span>
             </label>
@@ -960,16 +960,17 @@ function StudentForm({
         </form>
 
         {confirmDelete ? (
-          <div className="px-5 py-4 border-t border-slate-800 shrink-0 space-y-3">
-            <p className="text-sm text-center text-slate-300">
-              למחוק את <span className="font-bold text-white">{form.name}</span>
-              ? לא ניתן לבטל פעולה זו.
+          <div className="px-5 py-4 border-t border-slate-200 shrink-0 space-y-3">
+            <p className="text-sm text-center text-slate-700">
+              למחוק את{" "}
+              <span className="font-bold text-slate-900">{form.name}</span>? לא
+              ניתן לבטל פעולה זו.
             </p>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold py-3 rounded-xl transition-colors"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold py-3 rounded-xl transition-colors"
               >
                 ביטול
               </button>
@@ -983,11 +984,11 @@ function StudentForm({
             </div>
           </div>
         ) : (
-          <div className="flex gap-3 px-5 py-4 border-t border-slate-800 shrink-0">
+          <div className="flex gap-3 px-5 py-4 border-t border-slate-200 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold py-3 rounded-xl transition-colors"
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold py-3 rounded-xl transition-colors"
             >
               ביטול
             </button>
@@ -1024,8 +1025,10 @@ function WaChoiceModal({ targets, buildMessage, onClose }) {
       className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
       dir="rtl"
     >
-      <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-5 w-full max-w-xs space-y-3">
-        <p className="font-bold text-white text-center text-sm">שלח הודעה ל:</p>
+      <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 w-full max-w-xs space-y-3">
+        <p className="font-bold text-slate-900 text-center text-sm">
+          שלח הודעה ל:
+        </p>
         <div className="space-y-2">
           {targets.map((t) => (
             <button
@@ -1034,7 +1037,7 @@ function WaChoiceModal({ targets, buildMessage, onClose }) {
                 openWhatsApp(t.phone, buildMessage(t.role));
                 onClose();
               }}
-              className="w-full flex items-center gap-3 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold py-3 px-4 rounded-xl transition-colors"
+              className="w-full flex items-center gap-3 bg-slate-100 hover:bg-slate-200 text-slate-900 text-sm font-semibold py-3 px-4 rounded-xl transition-colors"
             >
               {WA_ICON}
               {t.label}
@@ -1043,7 +1046,7 @@ function WaChoiceModal({ targets, buildMessage, onClose }) {
         </div>
         <button
           onClick={onClose}
-          className="w-full text-sm text-slate-400 border border-slate-700 hover:border-slate-600 py-2.5 rounded-xl transition-colors"
+          className="w-full text-sm text-slate-500 border border-slate-200 hover:border-slate-600 py-2.5 rounded-xl transition-colors"
         >
           ביטול
         </button>
@@ -1101,13 +1104,13 @@ function TodayRemindersPanel({ students }) {
               return (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between gap-3 bg-white/[0.02] rounded-xl px-3 py-2"
+                  className="flex items-center justify-between gap-3 bg-black/[0.02] rounded-xl px-3 py-2"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">
+                    <p className="text-sm font-semibold text-slate-900 truncate">
                       {s.name}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {isSundayLesson ? "שיעור ביום ראשון" : "שיעור מחר"} ·{" "}
                       {s.lessonTime}
                     </p>
@@ -1167,19 +1170,21 @@ function MovedLessonModal({
   const hasTarget = resolveWaTargets(student).length > 0;
 
   const inp =
-    "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition";
+    "w-full bg-black/[0.04] border border-black/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition";
 
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
       dir="rtl"
     >
-      <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-5 w-full max-w-sm space-y-4">
+      <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 w-full max-w-sm space-y-4">
         <div className="flex items-center justify-between">
-          <p className="font-bold text-white">שיעור הוזז — {student.name}</p>
+          <p className="font-bold text-slate-900">
+            שיעור הוזז — {student.name}
+          </p>
           <button
             onClick={onClose}
-            className="p-1 text-slate-500 hover:text-white"
+            className="p-1 text-slate-500 hover:text-slate-900"
           >
             <svg
               className="w-5 h-5"
@@ -1195,7 +1200,7 @@ function MovedLessonModal({
         </div>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">
               יום חדש
             </label>
             <select
@@ -1212,7 +1217,7 @@ function MovedLessonModal({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">
               שעה חדשה
             </label>
             <input
@@ -1223,7 +1228,7 @@ function MovedLessonModal({
             />
           </div>
           {newDay !== "" && newTime && (
-            <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-xs text-slate-300 leading-relaxed">
+            <div className="bg-black/[0.03] border border-black/[0.07] rounded-xl p-3 text-xs text-slate-700 leading-relaxed">
               {buildMovedLessonMessage(student, newDay, newTime)}
             </div>
           )}
@@ -1231,14 +1236,14 @@ function MovedLessonModal({
         <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 text-sm font-semibold text-slate-400 border border-slate-700 hover:border-slate-600 rounded-xl py-2.5 transition-colors"
+            className="flex-1 text-sm font-semibold text-slate-500 border border-slate-200 hover:border-slate-600 rounded-xl py-2.5 transition-colors"
           >
             ביטול
           </button>
           <button
             onClick={sendWa}
             disabled={!newDay || !newTime || !hasTarget}
-            className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
+            className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-slate-900 text-sm font-bold py-2.5 rounded-xl transition-colors"
           >
             שלח WhatsApp
           </button>
@@ -1289,8 +1294,8 @@ function CalChangesModal({ changes, onClose }) {
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
       dir="rtl"
     >
-      <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl w-full max-w-md max-h-[70vh] flex flex-col">
-        <div className="flex items-center gap-3 p-5 border-b border-slate-800">
+      <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl w-full max-w-md max-h-[70vh] flex flex-col">
+        <div className="flex items-center gap-3 p-5 border-b border-slate-200">
           <div className="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0">
             <svg
               className="w-5 h-5 text-amber-400"
@@ -1305,14 +1310,16 @@ function CalChangesModal({ changes, onClose }) {
             </svg>
           </div>
           <div className="flex-1">
-            <p className="font-bold text-white">שינויים ב-Google Calendar</p>
-            <p className="text-xs text-slate-400">
+            <p className="font-bold text-slate-900">
+              שינויים ב-Google Calendar
+            </p>
+            <p className="text-xs text-slate-500">
               {changes.length} שיעורים הוזזו
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-500 hover:text-white"
+            className="p-1.5 text-slate-500 hover:text-slate-900"
           >
             <svg
               className="w-5 h-5"
@@ -1334,11 +1341,11 @@ function CalChangesModal({ changes, onClose }) {
             return (
               <div
                 key={i}
-                className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 space-y-2"
+                className="bg-black/[0.03] border border-black/[0.07] rounded-xl p-4 space-y-2"
               >
-                <p className="font-semibold text-white">{c.student.name}</p>
+                <p className="font-semibold text-slate-900">{c.student.name}</p>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-slate-400 line-through">
+                  <span className="text-slate-500 line-through">
                     {oldDay} {c.student.lessonTime}
                   </span>
                   <svg
@@ -1373,10 +1380,10 @@ function CalChangesModal({ changes, onClose }) {
             );
           })}
         </div>
-        <div className="border-t border-slate-800 p-4">
+        <div className="border-t border-slate-200 p-4">
           <button
             onClick={onClose}
-            className="w-full text-sm font-semibold text-slate-400 border border-slate-700 hover:border-slate-600 rounded-xl py-2.5 transition-colors"
+            className="w-full text-sm font-semibold text-slate-500 border border-slate-200 hover:border-slate-600 rounded-xl py-2.5 transition-colors"
           >
             סגור
           </button>
@@ -1460,8 +1467,8 @@ function ScheduleView({
   ];
 
   const emptyState = (
-    <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-12 flex flex-col items-center text-center">
-      <div className="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+    <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-12 flex flex-col items-center text-center">
+      <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-4">
         <svg
           className="w-7 h-7 text-slate-600"
           fill="none"
@@ -1473,7 +1480,7 @@ function ScheduleView({
           <path d="M16 2v4M8 2v4M3 10h18" />
         </svg>
       </div>
-      <p className="font-semibold text-slate-300 mb-1">לוח השיעורים ריק</p>
+      <p className="font-semibold text-slate-700 mb-1">לוח השיעורים ריק</p>
       <p className="text-sm text-slate-500">הוסף תלמידים עם יום ושעה קבועים</p>
     </div>
   );
@@ -1483,8 +1490,8 @@ function ScheduleView({
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white">לוח שיעורים</h2>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <h2 className="text-2xl font-bold text-slate-900">לוח שיעורים</h2>
+          <p className="text-sm text-slate-500 mt-0.5">
             {today.toLocaleDateString("he-IL", {
               weekday: "long",
               month: "long",
@@ -1512,7 +1519,7 @@ function ScheduleView({
         ) : clientId ? (
           <button
             onClick={() => onConnectGoogle(clientId)}
-            className="flex items-center gap-2 text-xs font-bold text-slate-300 border border-slate-700 hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/10 px-3 py-2 rounded-xl transition-all shrink-0"
+            className="flex items-center gap-2 text-xs font-bold text-slate-700 border border-slate-200 hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/10 px-3 py-2 rounded-xl transition-all shrink-0"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -1534,7 +1541,7 @@ function ScheduleView({
         {stats.map((s) => (
           <div
             key={s.label}
-            className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-3 sm:p-4"
+            className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-3 sm:p-4"
           >
             <p className="text-[11px] sm:text-xs text-slate-500 font-medium leading-tight">
               {s.label}
@@ -1573,8 +1580,8 @@ function ScheduleView({
                       selectedDay === i
                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/40"
                         : isToday
-                          ? "bg-slate-800 text-indigo-400 border border-indigo-500/40"
-                          : "bg-slate-900 text-slate-400 border border-slate-800"
+                          ? "bg-slate-100 text-indigo-400 border border-indigo-500/40"
+                          : "bg-slate-900 text-slate-500 border border-slate-200"
                     } ${!hasStudents && selectedDay !== i ? "opacity-40" : ""}`}
                   >
                     {day}
@@ -1607,11 +1614,11 @@ function ScheduleView({
                     <div
                       key={s.id}
                       onClick={() => onEditStudent(s)}
-                      className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-4 flex items-center gap-3 active:bg-white/[0.06] cursor-pointer"
+                      className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-4 flex items-center gap-3 active:bg-black/[0.06] cursor-pointer"
                     >
                       <div className="text-center shrink-0 w-12">
                         <span
-                          className="text-sm font-bold text-slate-300"
+                          className="text-sm font-bold text-slate-700"
                           dir="ltr"
                         >
                           {s.lessonTime}
@@ -1623,7 +1630,7 @@ function ScheduleView({
                         {s.avatar}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-100 truncate">
+                        <p className="font-semibold text-slate-900 truncate">
                           {s.name}
                         </p>
                         <p className="text-xs text-slate-500">
@@ -1646,11 +1653,11 @@ function ScheduleView({
 
       {/* ── Desktop: full weekly grid (always visible) ── */}
       <div className="hidden md:block">
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl overflow-hidden">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse min-w-[560px]">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-slate-200">
                   <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 w-16 bg-slate-900">
                     שעה
                   </th>
@@ -1659,7 +1666,7 @@ function ScheduleView({
                     return (
                       <th
                         key={day}
-                        className={`px-2 py-3 text-center text-xs font-semibold ${isToday ? "text-indigo-400 bg-indigo-500/10" : "text-slate-400"}`}
+                        className={`px-2 py-3 text-center text-xs font-semibold ${isToday ? "text-indigo-400 bg-indigo-500/10" : "text-slate-500"}`}
                       >
                         {day}
                         {isToday && (
@@ -1686,7 +1693,7 @@ function ScheduleView({
                   allTimes.map((time, rowIdx) => (
                     <tr
                       key={time}
-                      className={`border-b border-white/[0.05] ${rowIdx % 2 === 0 ? "" : "bg-white/[0.02]"}`}
+                      className={`border-b border-black/[0.05] ${rowIdx % 2 === 0 ? "" : "bg-black/[0.02]"}`}
                     >
                       <td
                         className="px-4 py-2 text-slate-500 font-mono text-xs font-semibold"
@@ -1710,7 +1717,7 @@ function ScheduleView({
                                   <button
                                     key={s.id}
                                     onClick={() => onEditStudent(s)}
-                                    className="w-full text-right group rounded-xl px-2.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 transition-all"
+                                    className="w-full text-right group rounded-xl px-2.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-indigo-500/50 transition-all"
                                   >
                                     <div className="flex items-center gap-1.5">
                                       <div
@@ -1718,7 +1725,7 @@ function ScheduleView({
                                       >
                                         {s.avatar}
                                       </div>
-                                      <span className="text-xs font-medium text-slate-200 truncate group-hover:text-white">
+                                      <span className="text-xs font-medium text-slate-800 truncate group-hover:text-slate-900">
                                         {s.name}
                                       </span>
                                     </div>
@@ -1878,14 +1885,14 @@ function ContactSyncModal({ students, onSave, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-[#16161d] border border-white/[0.08] rounded-2xl w-full max-w-md max-h-[82vh] flex flex-col overflow-hidden"
+        className="bg-[#ffffff] border border-black/[0.08] rounded-2xl w-full max-w-md max-h-[82vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-slate-800">
-          <h2 className="font-bold text-white text-lg">סנכרן מאנשי קשר</h2>
+        <div className="flex items-center justify-between p-5 border-b border-slate-200">
+          <h2 className="font-bold text-slate-900 text-lg">סנכרן מאנשי קשר</h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="text-slate-500 hover:text-slate-900 transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -1903,7 +1910,7 @@ function ContactSyncModal({ students, onSave, onClose }) {
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
           {step === "unsupported" && (
             <div className="flex flex-col items-center text-center gap-4 py-4">
-              <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 bg-slate-200/50 rounded-full flex items-center justify-center">
                 <svg
                   className="w-8 h-8 text-slate-500"
                   fill="none"
@@ -1916,10 +1923,10 @@ function ContactSyncModal({ students, onSave, onClose }) {
                 </svg>
               </div>
               <div>
-                <p className="text-white font-bold mb-1">
+                <p className="text-slate-900 font-bold mb-1">
                   הדפדפן אינו תומך ב-Contact Picker
                 </p>
-                <p className="text-sm text-slate-400 leading-relaxed">
+                <p className="text-sm text-slate-500 leading-relaxed">
                   תכונה זו זמינה ב-Chrome ל-Android בלבד.
                   <br />
                   עדכן מספרים ידנית דרך עריכת כרטיס התלמיד.
@@ -1944,10 +1951,10 @@ function ContactSyncModal({ students, onSave, onClose }) {
                 </svg>
               </div>
               <div>
-                <p className="text-white font-bold mb-1">
+                <p className="text-slate-900 font-bold mb-1">
                   בחר אנשי קשר לסנכרון
                 </p>
-                <p className="text-sm text-slate-400 leading-relaxed">
+                <p className="text-sm text-slate-500 leading-relaxed">
                   בחר מאנשי הקשר שלך — המערכת תתאים לפי שם (מתעלמת מ״גיטרה״,
                   ״אמא של״ וכו׳).
                 </p>
@@ -1964,7 +1971,7 @@ function ContactSyncModal({ students, onSave, onClose }) {
 
           {step === "review" && matches.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-slate-300 font-semibold mb-1">
+              <p className="text-slate-700 font-semibold mb-1">
                 לא נמצאו התאמות
               </p>
               <p className="text-slate-500 text-sm">
@@ -1993,14 +2000,14 @@ function ContactSyncModal({ students, onSave, onClose }) {
                       m.status === "confirmed"
                         ? "border-emerald-500/30 bg-emerald-500/5 opacity-60"
                         : m.status === "skipped"
-                          ? "border-slate-700/30 bg-slate-800/20 opacity-40"
-                          : "border-slate-700 bg-slate-800/50"
+                          ? "border-slate-200/30 bg-slate-100/20 opacity-40"
+                          : "border-slate-200 bg-slate-100/50"
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-white text-sm">
+                          <p className="font-semibold text-slate-900 text-sm">
                             {m.student.name}
                           </p>
                           <svg
@@ -2012,7 +2019,7 @@ function ContactSyncModal({ students, onSave, onClose }) {
                           >
                             <path d="M5 12h14M12 5l7 7-7 7" />
                           </svg>
-                          <p className="text-xs text-slate-400 truncate">
+                          <p className="text-xs text-slate-500 truncate">
                             {m.contactName}
                           </p>
                         </div>
@@ -2048,7 +2055,7 @@ function ContactSyncModal({ students, onSave, onClose }) {
                           </button>
                           <button
                             onClick={() => skipOne(i)}
-                            className="text-xs font-semibold text-slate-500 hover:text-slate-300 border border-slate-700 hover:border-slate-600 px-2 py-1.5 rounded-lg transition-colors"
+                            className="text-xs font-semibold text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-600 px-2 py-1.5 rounded-lg transition-colors"
                           >
                             דלג
                           </button>
@@ -2070,10 +2077,10 @@ function ContactSyncModal({ students, onSave, onClose }) {
 
         {(step === "unsupported" ||
           (step === "review" && (matches.length === 0 || allResolved))) && (
-          <div className="p-4 border-t border-slate-800">
+          <div className="p-4 border-t border-slate-200">
             <button
               onClick={onClose}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-colors"
+              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold py-3 rounded-xl transition-colors"
             >
               סגור
             </button>
@@ -2119,8 +2126,8 @@ function StudentsView({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">תלמידים</h2>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <h2 className="text-2xl font-bold text-slate-900">תלמידים</h2>
+          <p className="text-sm text-slate-500 mt-0.5">
             {students.length} תלמידים פעילים
           </p>
         </div>
@@ -2128,7 +2135,7 @@ function StudentsView({
           <button
             onClick={() => setShowContactSync(true)}
             title="סנכרן מספרי טלפון מאנשי קשר"
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm font-semibold px-3 py-2.5 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-sm font-semibold px-3 py-2.5 rounded-xl transition-colors"
           >
             <svg
               className="w-4 h-4"
@@ -2165,8 +2172,8 @@ function StudentsView({
       </div>
 
       {students.length === 0 ? (
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-14 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-14 flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
             <svg
               className="w-8 h-8 text-slate-600"
               fill="none"
@@ -2179,7 +2186,7 @@ function StudentsView({
               <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
-          <h3 className="font-bold text-slate-200 mb-1">אין תלמידים עדיין</h3>
+          <h3 className="font-bold text-slate-800 mb-1">אין תלמידים עדיין</h3>
           <p className="text-sm text-slate-500 mb-6">
             הוסף את התלמיד הראשון כדי להתחיל
           </p>
@@ -2220,20 +2227,20 @@ function StudentsView({
               <div
                 key={student.id}
                 onClick={() => onEditStudent(student)}
-                className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-4 hover:border-indigo-500/50 hover:border-indigo-500/40 hover:bg-white/[0.04] transition-all cursor-pointer group flex flex-col gap-3"
+                className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-4 hover:border-indigo-500/50 hover:border-indigo-500/40 hover:bg-black/[0.04] transition-all cursor-pointer group flex flex-col gap-3"
               >
                 {/* Header */}
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-11 h-11 rounded-full ${AVATAR_COLORS[i % AVATAR_COLORS.length]} flex items-center justify-center text-white font-bold shrink-0`}
+                    className={`w-11 h-11 rounded-full ${AVATAR_COLORS[i % AVATAR_COLORS.length]} flex items-center justify-center text-slate-900 font-bold shrink-0`}
                   >
                     {student.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white truncate">
+                    <p className="font-bold text-slate-900 truncate">
                       {student.name}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {student.instrument} · {student.level}
                     </p>
                   </div>
@@ -2261,7 +2268,7 @@ function StudentsView({
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       {student.contactName}
                     </span>
                   </div>
@@ -2272,7 +2279,7 @@ function StudentsView({
                     className="flex items-center gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <span className="text-xs text-slate-400 truncate" dir="ltr">
+                    <span className="text-xs text-slate-500 truncate" dir="ltr">
                       {student.contactPhone || student.phone}
                     </span>
                     <WhatsAppButton
@@ -2282,7 +2289,7 @@ function StudentsView({
                 )}
 
                 {dayName && student.lessonTime && (
-                  <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2.5 py-1.5 w-fit text-xs">
+                  <div className="flex items-center gap-1.5 bg-black/[0.04] border border-black/[0.08] rounded-xl px-2.5 py-1.5 w-fit text-xs">
                     <svg
                       className="w-3 h-3 text-indigo-400"
                       fill="none"
@@ -2293,11 +2300,11 @@ function StudentsView({
                       <circle cx="12" cy="12" r="10" />
                       <path d="M12 6v6l4 2" />
                     </svg>
-                    <span className="text-slate-300 font-medium">
+                    <span className="text-slate-700 font-medium">
                       {dayName} · {student.lessonTime}
                     </span>
                     {student.price > 0 && (
-                      <span className="text-slate-500 border-r border-slate-700 pr-2 mr-1">
+                      <span className="text-slate-500 border-r border-slate-200 pr-2 mr-1">
                         ₪{student.price}
                       </span>
                     )}
@@ -2307,7 +2314,7 @@ function StudentsView({
                 {/* Action rows */}
                 {(hasWaTarget || canSync) && (
                   <div
-                    className="space-y-2 pt-1 border-t border-slate-800"
+                    className="space-y-2 pt-1 border-t border-slate-200"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Row 1: Reminder · Billing · Calendar */}
@@ -2320,7 +2327,7 @@ function StudentsView({
                                 buildReminderMessage(student, role),
                               )
                             }
-                            className={`flex-1 flex items-center justify-center gap-1 text-xs font-semibold border rounded-xl py-2 transition-all ${isReminderDueToday(student) ? "text-amber-300 border-amber-500/50 bg-amber-500/10" : "text-emerald-400 border-slate-700 hover:border-emerald-500/50 hover:bg-emerald-500/10"}`}
+                            className={`flex-1 flex items-center justify-center gap-1 text-xs font-semibold border rounded-xl py-2 transition-all ${isReminderDueToday(student) ? "text-amber-300 border-amber-500/50 bg-amber-500/10" : "text-emerald-400 border-slate-200 hover:border-emerald-500/50 hover:bg-emerald-500/10"}`}
                           >
                             <svg
                               className="w-3.5 h-3.5"
@@ -2342,7 +2349,7 @@ function StudentsView({
                               )
                             }
                             title={`${monthlyCount} שיעורים · ₪${monthlyTotal}`}
-                            className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-emerald-400 border border-slate-700 hover:border-emerald-500/50 hover:bg-emerald-500/10 rounded-xl py-2 transition-all"
+                            className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-emerald-400 border border-slate-200 hover:border-emerald-500/50 hover:bg-emerald-500/10 rounded-xl py-2 transition-all"
                           >
                             <svg
                               className="w-3.5 h-3.5"
@@ -2361,7 +2368,7 @@ function StudentsView({
                         <button
                           onClick={(e) => handleSyncOne(student, e)}
                           disabled={syncing[student.id]}
-                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-indigo-400 border border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl py-2 transition-all disabled:opacity-50"
+                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-indigo-400 border border-slate-200 hover:border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl py-2 transition-all disabled:opacity-50"
                         >
                           <svg
                             className={`w-3.5 h-3.5 ${syncing[student.id] ? "animate-spin" : ""}`}
@@ -2382,7 +2389,7 @@ function StudentsView({
                       <div className="flex gap-2">
                         <button
                           onClick={() => setMovedStudent(student)}
-                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-indigo-400 border border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl py-1.5 transition-all"
+                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-indigo-400 border border-slate-200 hover:border-indigo-500/50 hover:bg-indigo-500/10 rounded-xl py-1.5 transition-all"
                         >
                           <svg
                             className="w-3 h-3"
@@ -2401,7 +2408,7 @@ function StudentsView({
                               buildLateCancellationMessage(student, role),
                             )
                           }
-                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-red-400 border border-slate-700 hover:border-red-500/50 hover:bg-red-500/10 rounded-xl py-1.5 transition-all"
+                          className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-red-400 border border-slate-200 hover:border-red-500/50 hover:bg-red-500/10 rounded-xl py-1.5 transition-all"
                         >
                           <svg
                             className="w-3 h-3"
@@ -2568,9 +2575,9 @@ function GCalImportWizard({
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
       dir="rtl"
     >
-      <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+      <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-3 p-5 border-b border-slate-800">
+        <div className="flex items-center gap-3 p-5 border-b border-slate-200">
           <div className="w-9 h-9 bg-blue-500/10 rounded-xl flex items-center justify-center shrink-0">
             <svg
               className="w-5 h-5 text-blue-400"
@@ -2584,14 +2591,14 @@ function GCalImportWizard({
             </svg>
           </div>
           <div className="flex-1">
-            <p className="font-bold text-white">ייבוא מ-Google Calendar</p>
-            <p className="text-xs text-slate-400">
+            <p className="font-bold text-slate-900">ייבוא מ-Google Calendar</p>
+            <p className="text-xs text-slate-500">
               אירועים שבועיים חוזרים → תלמידים
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-500 hover:text-white transition-colors"
+            className="p-1.5 text-slate-500 hover:text-slate-900 transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -2610,7 +2617,7 @@ function GCalImportWizard({
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {step === "fetch" && (
             <div className="text-center space-y-4 py-6">
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-slate-700">
                 אוביא את כל האירועים החוזרים השבועיים מ-Google Calendar שלך
                 ואהפוך אותם לתלמידים.
               </p>
@@ -2622,7 +2629,7 @@ function GCalImportWizard({
               <button
                 onClick={fetchEvents}
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-slate-900 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2638,7 +2645,7 @@ function GCalImportWizard({
 
           {step === "review" && events.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-500 text-sm">
                 לא נמצאו אירועים שבועיים חוזרים ביומן.
               </p>
             </div>
@@ -2646,7 +2653,7 @@ function GCalImportWizard({
 
           {step === "review" && events.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-slate-400 mb-3">
+              <p className="text-xs text-slate-500 mb-3">
                 סמן את האירועים שברצונך לייבא כתלמידים ({events.length} נמצאו)
               </p>
               {events.map((ev, i) => {
@@ -2655,7 +2662,7 @@ function GCalImportWizard({
                 return (
                   <label
                     key={i}
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selected[i] ? "border-indigo-500/50 bg-indigo-500/10" : "border-slate-800 bg-slate-800/50 hover:border-slate-700"}`}
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selected[i] ? "border-indigo-500/50 bg-indigo-500/10" : "border-slate-200 bg-slate-100/50 hover:border-slate-200"}`}
                   >
                     <input
                       type="checkbox"
@@ -2664,12 +2671,12 @@ function GCalImportWizard({
                       className="w-4 h-4 accent-indigo-500 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
                         {ev.name || ev.gcalSummary}
                       </p>
-                      <p className="text-xs text-slate-400">{ev.gcalSummary}</p>
+                      <p className="text-xs text-slate-500">{ev.gcalSummary}</p>
                     </div>
-                    <div className="text-xs text-slate-400 shrink-0 text-left">
+                    <div className="text-xs text-slate-500 shrink-0 text-left">
                       <p>{dayName}</p>
                       <p>{ev.lessonTime}</p>
                     </div>
@@ -2692,8 +2699,8 @@ function GCalImportWizard({
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <p className="font-bold text-white">הייבוא הושלם!</p>
-              <p className="text-sm text-slate-400">
+              <p className="font-bold text-slate-900">הייבוא הושלם!</p>
+              <p className="text-sm text-slate-500">
                 התלמידים נוספו — ערוך כל אחד כדי להוסיף פרטים.
               </p>
             </div>
@@ -2702,24 +2709,24 @@ function GCalImportWizard({
 
         {/* Footer */}
         {step === "review" && events.length > 0 && (
-          <div className="border-t border-slate-800 p-4 flex gap-3">
+          <div className="border-t border-slate-200 p-4 flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 text-sm font-semibold text-slate-400 border border-slate-700 hover:border-slate-600 rounded-xl py-2.5 transition-colors"
+              className="flex-1 text-sm font-semibold text-slate-500 border border-slate-200 hover:border-slate-600 rounded-xl py-2.5 transition-colors"
             >
               ביטול
             </button>
             <button
               onClick={handleImport}
               disabled={selectedCount === 0}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-slate-900 text-sm font-bold py-2.5 rounded-xl transition-colors"
             >
               ייבא {selectedCount} תלמידים
             </button>
           </div>
         )}
         {step === "done" && (
-          <div className="border-t border-slate-800 p-4">
+          <div className="border-t border-slate-200 p-4">
             <button
               onClick={onClose}
               className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
@@ -2841,7 +2848,7 @@ function InvoicesView({ students, settings = {}, userId }) {
     const st = morningStatus[id];
     if (!st) return null;
     const map = {
-      loading: { label: "...", cls: "text-slate-400" },
+      loading: { label: "...", cls: "text-slate-500" },
       paid: { label: "✓ שולם", cls: "text-emerald-400" },
       unpaid: { label: "! לא שולם", cls: "text-amber-400" },
       unknown: { label: "לא נמצא", cls: "text-slate-500" },
@@ -2881,13 +2888,17 @@ function InvoicesView({ students, settings = {}, userId }) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-2xl font-bold text-white">חשבוניות</h2>
-        <p className="text-sm text-slate-400 mt-0.5">{monthLabel}</p>
+        <h2 className="text-2xl font-bold text-slate-900">חשבוניות</h2>
+        <p className="text-sm text-slate-500 mt-0.5">{monthLabel}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'סה"כ לחיוב', value: `₪${grandTotal}`, color: "text-white" },
+          {
+            label: 'סה"כ לחיוב',
+            value: `₪${grandTotal}`,
+            color: "text-slate-900",
+          },
           { label: "לתלמידים", value: rows.length, color: "text-indigo-400" },
           {
             label: "ממוצע",
@@ -2899,7 +2910,7 @@ function InvoicesView({ students, settings = {}, userId }) {
         ].map((s) => (
           <div
             key={s.label}
-            className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-3 sm:p-4"
+            className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-3 sm:p-4"
           >
             <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
               {s.label}
@@ -2912,8 +2923,8 @@ function InvoicesView({ students, settings = {}, userId }) {
       </div>
 
       {rows.length === 0 ? (
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-12 flex flex-col items-center text-center">
-          <div className="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-12 flex flex-col items-center text-center">
+          <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-4">
             <svg
               className="w-7 h-7 text-slate-600"
               fill="none"
@@ -2927,11 +2938,11 @@ function InvoicesView({ students, settings = {}, userId }) {
               <line x1="16" y1="17" x2="8" y2="17" />
             </svg>
           </div>
-          <p className="font-semibold text-slate-300 mb-1">אין נתוני חיוב</p>
+          <p className="font-semibold text-slate-700 mb-1">אין נתוני חיוב</p>
           <p className="text-sm text-slate-500">הוסף מחיר ויום קבוע לתלמידים</p>
         </div>
       ) : (
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl overflow-hidden">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl overflow-hidden">
           {/* Mobile: cards */}
           <div className="sm:hidden divide-y divide-slate-800">
             {rows.map(({ student: s, count, total }, i) => {
@@ -2939,12 +2950,12 @@ function InvoicesView({ students, settings = {}, userId }) {
               return (
                 <div key={s.id} className="p-4 flex items-center gap-3">
                   <div
-                    className={`w-9 h-9 rounded-full ${AVATAR_COLORS[i % AVATAR_COLORS.length]} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}
+                    className={`w-9 h-9 rounded-full ${AVATAR_COLORS[i % AVATAR_COLORS.length]} flex items-center justify-center text-slate-900 text-[11px] font-bold shrink-0`}
                   >
                     {s.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-100 truncate">
+                    <p className="font-bold text-slate-900 truncate">
                       {s.name}
                     </p>
                     <p className="text-xs text-slate-500">
@@ -2952,13 +2963,13 @@ function InvoicesView({ students, settings = {}, userId }) {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-bold text-white">₪{total}</span>
+                    <span className="font-bold text-slate-900">₪{total}</span>
                     <PaidToggle student={s} />
                     <MorningBadge id={s.id} />
                     {hasMorning && (
                       <button
                         onClick={() => checkPayment(s)}
-                        className="text-[11px] font-semibold text-slate-400 hover:text-emerald-400 border border-slate-700 hover:border-emerald-500/40 px-2 py-1 rounded-lg transition-all"
+                        className="text-[11px] font-semibold text-slate-500 hover:text-emerald-400 border border-slate-200 hover:border-emerald-500/40 px-2 py-1 rounded-lg transition-all"
                       >
                         בדוק
                       </button>
@@ -2985,7 +2996,7 @@ function InvoicesView({ students, settings = {}, userId }) {
           {/* Desktop: table */}
           <table className="w-full text-sm hidden sm:table">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-slate-200">
                 <th className="text-right px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                   תלמיד
                 </th>
@@ -3007,7 +3018,7 @@ function InvoicesView({ students, settings = {}, userId }) {
                 return (
                   <tr
                     key={s.id}
-                    className="hover:bg-slate-800/40 transition-colors"
+                    className="hover:bg-slate-100/40 transition-colors"
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
@@ -3017,7 +3028,7 @@ function InvoicesView({ students, settings = {}, userId }) {
                           {s.avatar}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-100">{s.name}</p>
+                          <p className="font-bold text-slate-900">{s.name}</p>
                           {s.contactName && (
                             <p className="text-xs text-slate-500">
                               {s.contactName}
@@ -3026,13 +3037,13 @@ function InvoicesView({ students, settings = {}, userId }) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-400 text-xs">
+                    <td className="px-5 py-3.5 text-slate-500 text-xs">
                       {DAYS[parseInt(s.lessonDay)]} · {s.lessonTime}
                     </td>
-                    <td className="px-5 py-3.5 text-slate-300">
+                    <td className="px-5 py-3.5 text-slate-700">
                       {count} × ₪{s.price}
                     </td>
-                    <td className="px-5 py-3.5 font-bold text-white">
+                    <td className="px-5 py-3.5 font-bold text-slate-900">
                       ₪{total}
                     </td>
                     <td className="px-5 py-3.5">
@@ -3042,7 +3053,7 @@ function InvoicesView({ students, settings = {}, userId }) {
                         {hasMorning && (
                           <button
                             onClick={() => checkPayment(s)}
-                            className="text-[11px] font-semibold text-slate-400 hover:text-emerald-400 border border-slate-700 hover:border-emerald-500/40 px-2 py-1 rounded-lg transition-all"
+                            className="text-[11px] font-semibold text-slate-500 hover:text-emerald-400 border border-slate-200 hover:border-emerald-500/40 px-2 py-1 rounded-lg transition-all"
                           >
                             בדוק
                           </button>
@@ -3050,7 +3061,7 @@ function InvoicesView({ students, settings = {}, userId }) {
                         {hasTarget && (
                           <button
                             onClick={() => sendWa(s)}
-                            className="text-xs font-semibold text-emerald-400 border border-slate-700 hover:border-emerald-500/50 hover:bg-emerald-500/10 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5"
+                            className="text-xs font-semibold text-emerald-400 border border-slate-200 hover:border-emerald-500/50 hover:bg-emerald-500/10 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5"
                           >
                             <svg
                               className="w-3 h-3"
@@ -3172,18 +3183,18 @@ function SettingsView({
   }
 
   const inp =
-    "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition font-mono";
+    "w-full bg-black/[0.04] border border-black/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/40 transition font-mono";
 
   return (
     <div className="space-y-5 max-w-2xl">
       <div>
-        <h2 className="text-2xl font-bold text-white">הגדרות</h2>
-        <p className="text-sm text-slate-400 mt-0.5">חיבורים ואינטגרציות</p>
+        <h2 className="text-2xl font-bold text-slate-900">הגדרות</h2>
+        <p className="text-sm text-slate-500 mt-0.5">חיבורים ואינטגרציות</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-4">
         {/* ── Google Calendar ── */}
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-5 sm:p-6">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center shrink-0">
               <svg
@@ -3198,13 +3209,13 @@ function SettingsView({
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-slate-100">Google Calendar</p>
+              <p className="font-bold text-slate-900">Google Calendar</p>
               <p className="text-xs text-slate-500">
                 יצירת אירועים חוזרים לפי מערכת השיעורים
               </p>
             </div>
             <span
-              className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${googleToken ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-500"}`}
+              className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${googleToken ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-100 text-slate-500"}`}
             >
               {googleToken ? "מחובר" : "לא מחובר"}
             </span>
@@ -3212,7 +3223,7 @@ function SettingsView({
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 Client ID (OAuth 2.0)
               </label>
               <input
@@ -3230,7 +3241,7 @@ function SettingsView({
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 API Key
               </label>
               <input
@@ -3250,7 +3261,7 @@ function SettingsView({
                 type="button"
                 onClick={() => onConnectGoogle(form.googleClientId)}
                 disabled={!form.googleClientId}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold py-3 rounded-xl transition-colors mt-1"
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-900 text-sm font-bold py-3 rounded-xl transition-colors mt-1"
               >
                 <svg
                   className="w-4 h-4"
@@ -3281,7 +3292,7 @@ function SettingsView({
                 <button
                   type="button"
                   onClick={onDisconnectGoogle}
-                  className="text-xs text-slate-400 hover:text-slate-200 underline"
+                  className="text-xs text-slate-500 hover:text-slate-800 underline"
                 >
                   נתק
                 </button>
@@ -3291,7 +3302,7 @@ function SettingsView({
         </div>
 
         {/* ── Morning ── */}
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-5 sm:p-6">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center shrink-0">
               <svg
@@ -3308,20 +3319,20 @@ function SettingsView({
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-slate-100">
+              <p className="font-bold text-slate-900">
                 Morning — חשבונית ירוקה
               </p>
               <p className="text-xs text-slate-500">הפקת חשבוניות אוטומטית</p>
             </div>
             <span
-              className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${form.morningKey && form.morningSecret ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-500"}`}
+              className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${form.morningKey && form.morningSecret ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-100 text-slate-500"}`}
             >
               {form.morningKey && form.morningSecret ? "מחובר" : "לא מחובר"}
             </span>
           </div>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 API Key
               </label>
               <input
@@ -3339,7 +3350,7 @@ function SettingsView({
               </p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 Secret
               </label>
               <input
@@ -3357,7 +3368,7 @@ function SettingsView({
         </div>
 
         {/* ── WhatsApp Automation ── */}
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-5 sm:p-6">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center shrink-0">
               <svg
@@ -3369,7 +3380,7 @@ function SettingsView({
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-slate-100">WhatsApp Automation</p>
+              <p className="font-bold text-slate-900">WhatsApp Automation</p>
               <p className="text-xs text-slate-500">
                 תזכורות וחיובים אוטומטיים בוואטסאפ
               </p>
@@ -3383,7 +3394,7 @@ function SettingsView({
                   automationEnabled: !f.automationEnabled,
                 }))
               }
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.automationEnabled ? "bg-indigo-600" : "bg-slate-700"}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${form.automationEnabled ? "bg-indigo-600" : "bg-slate-200"}`}
               role="switch"
               aria-checked={form.automationEnabled}
               dir="ltr"
@@ -3396,7 +3407,7 @@ function SettingsView({
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 Webhook Secret
               </label>
               <input
@@ -3415,7 +3426,7 @@ function SettingsView({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 Webhook URL
               </label>
               <div className="flex items-center gap-2">
@@ -3424,7 +3435,7 @@ function SettingsView({
                   value={webhookUrl}
                   placeholder="יש להזין Webhook Secret כדי לייצר את ה-URL"
                   dir="ltr"
-                  className={`${inp} text-slate-400 cursor-text select-all text-[11px]`}
+                  className={`${inp} text-slate-500 cursor-text select-all text-[11px]`}
                 />
                 <button
                   type="button"
@@ -3432,7 +3443,7 @@ function SettingsView({
                     webhookUrl && navigator.clipboard?.writeText(webhookUrl)
                   }
                   disabled={!webhookUrl}
-                  className="shrink-0 text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="shrink-0 text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="העתק"
                 >
                   <svg
@@ -3458,7 +3469,7 @@ function SettingsView({
                   type="button"
                   onClick={handleTestAutomation}
                   disabled={testingAutomation}
-                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
                 >
                   <svg
                     className={`w-3.5 h-3.5 ${testingAutomation ? "animate-spin" : ""}`}
@@ -3473,12 +3484,12 @@ function SettingsView({
                   {testingAutomation ? "שולח..." : "שלח הודעת בדיקה"}
                 </button>
                 {testResult && (
-                  <span className="text-xs text-slate-400">{testResult}</span>
+                  <span className="text-xs text-slate-500">{testResult}</span>
                 )}
               </div>
             )}
 
-            <div className="bg-white/[0.03] rounded-xl px-4 py-3 text-xs text-slate-500 leading-relaxed space-y-1">
+            <div className="bg-black/[0.03] rounded-xl px-4 py-3 text-xs text-slate-500 leading-relaxed space-y-1">
               <p>• תזכורות נשלחות יום לפני השיעור (שישי לשיעורי ראשון)</p>
               <p>• חיוב נשלח ב-1 לחודש לתלמידים עם מחיר מוגדר</p>
               <p>• פונקציית Cron מופעלת ב-08:00 בכל בוקר (שרת)</p>
@@ -3487,7 +3498,7 @@ function SettingsView({
         </div>
 
         {/* ── Calendar Bot — Self-Service Rescheduling ── */}
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 sm:p-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center shrink-0">
               <svg
@@ -3503,7 +3514,7 @@ function SettingsView({
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-slate-100">
+              <p className="font-bold text-slate-900">
                 Calendar Bot — שיבוץ עצמי
               </p>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -3517,14 +3528,14 @@ function SettingsView({
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-xs text-slate-600 shrink-0">
-                <div className="w-2 h-2 bg-slate-600 rounded-full" />
+                <div className="w-2 h-2 bg-slate-300 rounded-full" />
                 לא מחובר
               </div>
             )}
           </div>
 
-          <div className="space-y-2 text-xs text-slate-500 bg-white/[0.02] rounded-xl p-3">
-            <p className="font-semibold text-slate-400">
+          <div className="space-y-2 text-xs text-slate-500 bg-black/[0.02] rounded-xl p-3">
+            <p className="font-semibold text-slate-500">
               שעות עבודה לפי הגדרת זמינות
             </p>
             <p>• הבוט מציע 3–4 מועדים פנויים בלבד לפי יומן Google</p>
@@ -3563,37 +3574,37 @@ function SettingsView({
             </button>
             <p className="text-xs text-slate-600">
               יש להוסיף{" "}
-              <code className="bg-white/[0.06] px-1 rounded">
+              <code className="bg-black/[0.06] px-1 rounded">
                 {window.location.origin}
               </code>{" "}
               כ-Authorized Redirect URI ב-Google Cloud Console
             </p>
           </div>
 
-          <p className="text-xs text-slate-600 border-t border-white/[0.05] pt-3">
+          <p className="text-xs text-slate-600 border-t border-black/[0.05] pt-3">
             נדרש secret ב-Supabase Edge Functions:{" "}
-            <code className="bg-white/[0.06] px-1 rounded">
+            <code className="bg-black/[0.06] px-1 rounded">
               GOOGLE_CLIENT_SECRET
             </code>{" "}
             ו-
-            <code className="bg-white/[0.06] px-1 rounded">
+            <code className="bg-black/[0.06] px-1 rounded">
               GOOGLE_CLIENT_ID
             </code>
           </p>
         </div>
 
         {/* ── שעות זמינות ── */}
-        <div className="bg-[#16161d] border border-white/[0.07] rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 sm:p-6 space-y-4">
           <div>
-            <p className="font-bold text-slate-100">שעות זמינות</p>
+            <p className="font-bold text-slate-900">שעות זמינות</p>
             <p className="text-xs text-slate-500 mt-0.5">
               הגדר לכל יום את חלונות הזמן שבהם תלמידים יכולים לקבוע — הבוט יציע
               מועדים רק בחלונות האלו
             </p>
           </div>
-          <div className="flex items-center justify-between bg-white/[0.03] rounded-xl px-3 py-2.5">
+          <div className="flex items-center justify-between bg-black/[0.03] rounded-xl px-3 py-2.5">
             <div>
-              <p className="text-sm font-semibold text-slate-200">משך שיעור</p>
+              <p className="text-sm font-semibold text-slate-800">משך שיעור</p>
               <p className="text-xs text-slate-500 mt-0.5">
                 הבוט מחלק את חלונות הזמן למועדים באורך הזה
               </p>
@@ -3611,7 +3622,7 @@ function SettingsView({
                     lessonDurationMinutes: parseInt(e.target.value, 10) || 45,
                   })
                 }
-                className="w-20 bg-transparent text-sm text-slate-200 text-center focus:outline-none focus:ring-1 focus:ring-indigo-500/50 rounded px-1 border border-white/10"
+                className="w-20 bg-transparent text-sm text-slate-800 text-center focus:outline-none focus:ring-1 focus:ring-indigo-500/50 rounded px-1 border border-white/10"
                 dir="ltr"
               />
               <span className="text-slate-500 text-xs">דקות</span>
@@ -3623,7 +3634,7 @@ function SettingsView({
               return (
                 <div key={day} className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-400 w-16">
+                    <span className="text-xs font-semibold text-slate-500 w-16">
                       יום {HEBREW_DAYS[day]}
                     </span>
                     <button
@@ -3649,7 +3660,7 @@ function SettingsView({
                     dayWins.map((w, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-2 bg-white/[0.03] rounded-xl px-3 py-2"
+                        className="flex items-center gap-2 bg-black/[0.03] rounded-xl px-3 py-2"
                       >
                         <input
                           type="time"
@@ -3657,7 +3668,7 @@ function SettingsView({
                           onChange={(e) =>
                             updateWindow(day, i, "start_time", e.target.value)
                           }
-                          className="bg-transparent text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 rounded px-1"
+                          className="bg-transparent text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 rounded px-1"
                           dir="ltr"
                         />
                         <span className="text-slate-600 text-xs">עד</span>
@@ -3667,7 +3678,7 @@ function SettingsView({
                           onChange={(e) =>
                             updateWindow(day, i, "end_time", e.target.value)
                           }
-                          className="bg-transparent text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 rounded px-1"
+                          className="bg-transparent text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 rounded px-1"
                           dir="ltr"
                         />
                         <button
@@ -3693,7 +3704,7 @@ function SettingsView({
               );
             })}
           </div>
-          <p className="text-xs text-slate-600 border-t border-white/[0.05] pt-3">
+          <p className="text-xs text-slate-600 border-t border-black/[0.05] pt-3">
             שבת תמיד מושמטת. ימים ללא חלונות — הבוט לא יציע מועדים בהם.
           </p>
         </div>
@@ -3870,7 +3881,7 @@ function ActivityView({ userId }) {
               key={row.id}
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm"
             >
-              <span className="text-slate-200">
+              <span className="text-slate-800">
                 {row.status === "pending_contact_approval"
                   ? `לפנות לתלמיד שמשבצתו ${slotText(row.selected_option)} ולהציע לו החלפה?`
                   : row.kind === "swap"
@@ -3892,7 +3903,7 @@ function ActivityView({ userId }) {
                         ? approveSwap(row)
                         : approveRes(row)
                   }
-                  className="text-xs font-semibold text-white bg-indigo-600 px-3 py-1.5 rounded-lg"
+                  className="text-xs font-semibold text-slate-900 bg-indigo-600 px-3 py-1.5 rounded-lg"
                 >
                   אשר
                 </button>
@@ -3911,7 +3922,7 @@ function ActivityView({ userId }) {
               key={row.id}
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm"
             >
-              <span className="text-slate-200">
+              <span className="text-slate-800">
                 נראה ש{row.student_name} עדיין לא שילם (₪{row.amount}). שילם
                 בדרך אחרת?
               </span>
@@ -3924,7 +3935,7 @@ function ActivityView({ userId }) {
                 </button>
                 <button
                   onClick={() => confirmSendReminder(row)}
-                  className="text-xs font-semibold text-white bg-indigo-600 px-3 py-1.5 rounded-lg"
+                  className="text-xs font-semibold text-slate-900 bg-indigo-600 px-3 py-1.5 rounded-lg"
                 >
                   שלח תזכורת
                 </button>
@@ -3934,21 +3945,21 @@ function ActivityView({ userId }) {
         </div>
       )}
       {loading ? (
-        <p className="text-slate-400 text-sm">טוען…</p>
+        <p className="text-slate-500 text-sm">טוען…</p>
       ) : rows.length === 0 ? (
-        <p className="text-slate-400 text-sm">אין פעילות להצגה עדיין.</p>
+        <p className="text-slate-500 text-sm">אין פעילות להצגה עדיין.</p>
       ) : (
         <ul className="space-y-2">
           {rows.map((r, i) => (
             <li
               key={i}
-              className="flex items-center justify-between bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3"
+              className="flex items-center justify-between bg-black/[0.03] border border-black/[0.06] rounded-xl px-4 py-3"
             >
               <div>
-                <div className="text-slate-100 text-sm font-semibold">
+                <div className="text-slate-900 text-sm font-semibold">
                   {ACTIVITY_LABELS[r.action_type] || r.action_type}
                 </div>
-                <div className="text-slate-400 text-xs mt-0.5">
+                <div className="text-slate-500 text-xs mt-0.5">
                   {r.student_identifier}
                 </div>
               </div>
@@ -4526,19 +4537,19 @@ export default function App({ user }) {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#0d0d11]">
+      <div className="min-h-dvh flex items-center justify-center bg-[#f7f2ea]">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-dvh bg-[#0d0d11] overflow-hidden" dir="rtl">
+    <div className="flex h-dvh bg-[#f7f2ea] overflow-hidden" dir="rtl">
       {/* ── Sidebar ── */}
       <aside
-        className={`${sidebarOpen ? "w-56" : "w-14"} bg-[#111117] border-l border-white/[0.07] flex flex-col transition-all duration-300 shrink-0 hidden sm:flex`}
+        className={`${sidebarOpen ? "w-56" : "w-14"} bg-[#111117] border-l border-black/[0.07] flex flex-col transition-all duration-300 shrink-0 hidden sm:flex`}
       >
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.07]">
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-black/[0.07]">
           <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0">
             <svg className="w-4 h-[14px]" viewBox="0 0 48 46" fill="white">
               <path d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" />
@@ -4546,7 +4557,7 @@ export default function App({ user }) {
           </div>
           {sidebarOpen && (
             <div>
-              <p className="font-bold text-white text-sm tracking-tight">
+              <p className="font-bold text-slate-900 text-sm tracking-tight">
                 Tempo
               </p>
               <p className="text-[11px] text-slate-500">ניהול תלמידים</p>
@@ -4562,7 +4573,7 @@ export default function App({ user }) {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-right ${
                 activeTab === item.id
                   ? "bg-indigo-500/[0.12] text-indigo-300"
-                  : "text-slate-500 hover:bg-white/[0.05] hover:text-slate-200"
+                  : "text-slate-500 hover:bg-black/[0.05] hover:text-slate-800"
               }`}
             >
               <span className="shrink-0">{item.icon}</span>
@@ -4572,7 +4583,7 @@ export default function App({ user }) {
         </nav>
 
         <div
-          className={`border-t border-white/[0.07] p-3 flex items-center gap-2.5 ${!sidebarOpen && "justify-center"}`}
+          className={`border-t border-black/[0.07] p-3 flex items-center gap-2.5 ${!sidebarOpen && "justify-center"}`}
         >
           <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
             {user.email?.[0]?.toUpperCase() || "א"}
@@ -4580,7 +4591,7 @@ export default function App({ user }) {
           {sidebarOpen && (
             <div className="flex-1 min-w-0">
               <p
-                className="text-xs font-semibold text-slate-200 truncate"
+                className="text-xs font-semibold text-slate-800 truncate"
                 dir="ltr"
               >
                 {user.email}
@@ -4602,10 +4613,10 @@ export default function App({ user }) {
       {/* ── Main ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="bg-[#111117] border-b border-white/[0.07] px-4 sm:px-6 py-3.5 flex items-center gap-3 shrink-0">
+        <header className="bg-[#111117] border-b border-black/[0.07] px-4 sm:px-6 py-3.5 flex items-center gap-3 shrink-0">
           <button
             onClick={() => setSidebarOpen((o) => !o)}
-            className="p-1.5 rounded-xl text-slate-500 hover:bg-white/[0.05] hover:text-white transition-colors hidden sm:block"
+            className="p-1.5 rounded-xl text-slate-500 hover:bg-black/[0.05] hover:text-slate-900 transition-colors hidden sm:block"
           >
             <svg
               className="w-5 h-5"
@@ -4621,14 +4632,14 @@ export default function App({ user }) {
           </button>
           <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center sm:hidden shrink-0">
             <svg
-              className="w-3.5 h-3 text-white"
+              className="w-3.5 h-3 text-slate-900"
               viewBox="0 0 48 46"
               fill="white"
             >
               <path d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" />
             </svg>
           </div>
-          <h1 className="text-base font-bold text-white">
+          <h1 className="text-base font-bold text-slate-900">
             {VIEW_LABELS[activeTab]}
           </h1>
           <div className="mr-auto flex items-center gap-2">
@@ -4641,7 +4652,7 @@ export default function App({ user }) {
                 <button
                   onClick={detectCalChanges}
                   title="בדוק שינויים ביומן"
-                  className="p-1.5 text-slate-500 hover:bg-white/[0.05] hover:text-blue-400 rounded-xl transition-colors hidden sm:block"
+                  className="p-1.5 text-slate-500 hover:bg-black/[0.05] hover:text-blue-400 rounded-xl transition-colors hidden sm:block"
                 >
                   <svg
                     className="w-4 h-4"
@@ -4663,7 +4674,7 @@ export default function App({ user }) {
                   : setActiveTab("activity")
               }
               title="פעילות והתראות"
-              className="relative p-1.5 text-slate-500 hover:bg-white/[0.05] hover:text-white rounded-xl transition-colors"
+              className="relative p-1.5 text-slate-500 hover:bg-black/[0.05] hover:text-slate-900 rounded-xl transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -4719,7 +4730,7 @@ export default function App({ user }) {
         </main>
 
         {/* ── Mobile bottom nav ── */}
-        <nav className="sm:hidden bg-[#111117] border-t border-white/[0.06] flex shrink-0 safe-bottom">
+        <nav className="sm:hidden bg-[#111117] border-t border-black/[0.06] flex shrink-0 safe-bottom">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
