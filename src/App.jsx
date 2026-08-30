@@ -2629,7 +2629,7 @@ function GCalImportWizard({
               <button
                 onClick={fetchEvents}
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-slate-900 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -2719,7 +2719,7 @@ function GCalImportWizard({
             <button
               onClick={handleImport}
               disabled={selectedCount === 0}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-slate-900 text-sm font-bold py-2.5 rounded-xl transition-colors"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
             >
               ייבא {selectedCount} תלמידים
             </button>
@@ -3261,7 +3261,7 @@ function SettingsView({
                 type="button"
                 onClick={() => onConnectGoogle(form.googleClientId)}
                 disabled={!form.googleClientId}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-900 text-sm font-bold py-3 rounded-xl transition-colors mt-1"
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold py-3 rounded-xl transition-colors mt-1"
               >
                 <svg
                   className="w-4 h-4"
