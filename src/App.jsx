@@ -3992,6 +3992,93 @@ function ActivityView({ userId }) {
   );
 }
 
+// First-run "getting started" checklist. Non-blocking: shows at the top of the
+// content area until every step is done or the teacher dismisses it. Each step's
+// `done` is derived from real data, and clicking an unfinished step jumps to the
+// place that completes it.
+function OnboardingCard({ steps, onDismiss }) {
+  const doneCount = steps.filter((s) => s.done).length;
+  return (
+    <div className="bg-[#ffffff] border border-black/[0.07] rounded-2xl p-5 mb-4 sm:mb-6">
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <div>
+          <h3 className="font-bold text-slate-900 text-base">בואו נתחיל ✨</h3>
+          <p className="text-sm text-slate-500">
+            כמה צעדים קצרים כדי שהאפליקציה תתחיל לעבוד עבורך
+          </p>
+        </div>
+        <button
+          onClick={onDismiss}
+          title="סגור"
+          className="shrink-0 p-1.5 text-slate-400 hover:bg-black/[0.05] hover:text-slate-700 rounded-lg transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <p className="text-xs font-semibold text-indigo-600 mb-3">
+        {doneCount} מתוך {steps.length} הושלמו
+      </p>
+      <ul className="space-y-2">
+        {steps.map((step) => (
+          <li key={step.key}>
+            <button
+              onClick={step.done ? undefined : step.onClick}
+              className={`w-full flex items-center gap-3 text-right rounded-xl px-3 py-2.5 transition-colors ${
+                step.done ? "cursor-default" : "hover:bg-black/[0.04]"
+              }`}
+            >
+              <span
+                className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center border ${
+                  step.done
+                    ? "bg-emerald-500 border-emerald-500 text-white"
+                    : "border-slate-300 text-transparent"
+                }`}
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                  viewBox="0 0 24 24"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              <span
+                className={`text-sm font-medium ${
+                  step.done ? "text-slate-400 line-through" : "text-slate-800"
+                }`}
+              >
+                {step.label}
+              </span>
+              {!step.done && (
+                <svg
+                  className="w-4 h-4 text-slate-400 mr-auto shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              )}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function App({ user }) {
   const [activeTab, setActiveTab] = useState("schedule");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -4005,6 +4092,7 @@ export default function App({ user }) {
     webhookSecret: "",
     automationEnabled: false,
     paymentTrackingMode: "manual",
+    senderName: "",
     googleRefreshToken: "", // set by gcal-oauth Edge Function, read-only from UI
   });
   const [loading, setLoading] = useState(true);
@@ -4015,6 +4103,15 @@ export default function App({ user }) {
   const [calChanges, setCalChanges] = useState([]);
   const [showCalChanges, setShowCalChanges] = useState(false);
   const [pendingCount, setPendingCount] = useState(0); // items needing the teacher's attention (for the bell dot)
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
+    try {
+      return (
+        localStorage.getItem(`tempo_onboarding_dismissed_${user.id}`) === "1"
+      );
+    } catch {
+      return false;
+    }
+  });
 
   // Count unhandled items so the bell dot shows only when there's something to do.
   // Refresh on tab change, every 30s, and whenever the window regains focus, so a
@@ -4563,6 +4660,45 @@ export default function App({ user }) {
     );
   }
 
+  // ── First-run onboarding checklist ─────────────────────────────────────────
+  const onboardingSteps = [
+    {
+      key: "name",
+      label: "הזן את השם שהתלמידים יראו בהודעות",
+      done: !!settings.senderName?.trim(),
+      onClick: () => setActiveTab("settings"),
+    },
+    {
+      key: "availability",
+      label: "הגדר את שעות הזמינות שלך",
+      done: availability.length > 0,
+      onClick: () => setActiveTab("settings"),
+    },
+    {
+      key: "student",
+      label: "הוסף את התלמיד הראשון",
+      done: students.length > 0,
+      onClick: () => setActiveTab("students"),
+    },
+    {
+      key: "automation",
+      label: "הפעל את האוטומציה כדי שהתזכורות יישלחו",
+      done: settings.automationEnabled === true,
+      onClick: () => setActiveTab("settings"),
+    },
+  ];
+  const onboardingComplete = onboardingSteps.every((s) => s.done);
+  const showOnboarding = !onboardingComplete && !onboardingDismissed;
+
+  function dismissOnboarding() {
+    setOnboardingDismissed(true);
+    try {
+      localStorage.setItem(`tempo_onboarding_dismissed_${user.id}`, "1");
+    } catch {
+      /* storage unavailable — dismiss for this session only */
+    }
+  }
+
   return (
     <div className="flex h-dvh bg-[#f7f2ea] overflow-hidden" dir="rtl">
       {/* ── Sidebar ── */}
@@ -4746,6 +4882,12 @@ export default function App({ user }) {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {showOnboarding && (
+            <OnboardingCard
+              steps={onboardingSteps}
+              onDismiss={dismissOnboarding}
+            />
+          )}
           {renderView()}
         </main>
 
