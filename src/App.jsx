@@ -3408,6 +3408,24 @@ function SettingsView({
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                השם שהתלמידים יראו בהודעות
+              </label>
+              <input
+                type="text"
+                value={form.senderName || ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, senderName: e.target.value }))
+                }
+                placeholder="לדוגמה: דנה, או סטודיו דנה למוזיקה"
+                className={inp}
+              />
+              <p className="text-[11px] text-slate-500 mt-1.5">
+                ההודעות נשלחות ממספר משותף, אז השם הזה מופיע בפתיח כדי שהתלמיד
+                ידע ממי ההודעה.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">
                 Webhook Secret
               </label>
               <input
@@ -4115,6 +4133,7 @@ export default function App({ user }) {
           automationEnabled: settingsData.automation_enabled ?? false,
           paymentTrackingMode: settingsData.payment_tracking_mode ?? "manual",
           lessonDurationMinutes: settingsData.lesson_duration_minutes ?? 45,
+          senderName: settingsData.sender_name || "",
           googleRefreshToken: settingsData.google_refresh_token || "",
         });
       if (availData)
@@ -4284,6 +4303,7 @@ export default function App({ user }) {
         automation_enabled: newSettings.automationEnabled,
         payment_tracking_mode: newSettings.paymentTrackingMode,
         lesson_duration_minutes: newSettings.lessonDurationMinutes ?? 45,
+        sender_name: newSettings.senderName || null,
       },
       { onConflict: "user_id" },
     );
