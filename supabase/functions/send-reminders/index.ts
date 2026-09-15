@@ -533,6 +533,7 @@ Deno.serve(async (req: Request) => {
             );
             await supabase.from("tempo_automation_logs").insert({
               student_identifier: student.name,
+              user_id: userId,
               action_type: "reminder_sent",
               raw_data: params.join(" | "),
             });
@@ -543,6 +544,7 @@ Deno.serve(async (req: Request) => {
             errors.push(msg);
             await supabase.from("tempo_automation_logs").insert({
               student_identifier: student.name,
+              user_id: userId,
               action_type: "reminder_error",
               raw_data: msg,
             });
@@ -594,6 +596,7 @@ Deno.serve(async (req: Request) => {
             );
             await supabase.from("tempo_automation_logs").insert({
               student_identifier: student.name,
+              user_id: userId,
               action_type: "billing_sent",
               raw_data: params.join(" | "),
             });
@@ -604,6 +607,7 @@ Deno.serve(async (req: Request) => {
             errors.push(msg);
             await supabase.from("tempo_automation_logs").insert({
               student_identifier: student.name,
+              user_id: userId,
               action_type: "billing_error",
               raw_data: msg,
             });

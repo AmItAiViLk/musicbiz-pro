@@ -93,11 +93,14 @@ async function sendMetaReply(
 
 // ─── Optional DB logging ──────────────────────────────────────────────────────────
 
-/** Best-effort insert into tempo_automation_logs; never throws. */
+/** Best-effort insert into tempo_automation_logs; never throws.
+ * `teacherId` scopes the row to its owning teacher (multi-tenant isolation);
+ * pass null only when the sender maps to no teacher (unknown number). */
 async function logToDb(
   studentIdentifier: string,
   eventType: string,
   message: string,
+  teacherId?: string | null,
 ): Promise<void> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -105,12 +108,13 @@ async function logToDb(
 
   try {
     const supabase = createClient(supabaseUrl, serviceKey);
-    // Columns match the actual tempo_automation_logs schema:
-    //   student_identifier (text), action_type (text), raw_data (text).
+    // Columns: student_identifier (text), action_type (text), raw_data (text),
+    // user_id (uuid, owning teacher — scoped by RLS).
     await supabase.from("tempo_automation_logs").insert({
       student_identifier: studentIdentifier,
       action_type: eventType,
       raw_data: message,
+      user_id: teacherId ?? null,
     });
   } catch (err) {
     console.error("logToDb error:", (err as Error).message);
@@ -524,12 +528,14 @@ async function handleAvailabilityReply(
         partner.name || partnerPhone,
         "swap_partner_contacted",
         slotLabel(aSlot),
+        userId,
       );
     } catch (err) {
       await logToDb(
         partner.name || partnerPhone,
         "swap_contact_error",
         (err as Error).message,
+        userId,
       );
     }
     return {
@@ -646,6 +652,7 @@ async function advanceSwapToNextCandidate(
         nextStudent.name || next.studentId,
         "swap_contact_error",
         (err as Error).message,
+        req.user_id,
       );
     }
   }
@@ -830,7 +837,12 @@ Deno.serve(async (req: Request) => {
   // and log only length. The full content is still recorded in tempo_automation_logs.
   const maskedPhone = senderPhone.replace(/.(?=.{4})/g, "*");
   console.log(`Inbound text from ${maskedPhone} (${text.length} chars).`);
-  await logToDb(senderPhone, "incoming", text);
+  // Resolve the owning teacher once (by the sender's phone) and stamp every
+  // log row with it, so each teacher sees only their own activity.
+  const teacherId = (await findStudentByPhone(senderPhone))?.user_id ?? null;
+  const log = (id: string, action: string, msg: string) =>
+    logToDb(id, action, msg, teacherId);
+  await log(senderPhone, "incoming", text);
 
   // ── 3. Send the automated reply ───────────────────────────────────────────────────
   const token = Deno.env.get("WHAPI_TOKEN") ?? "";
@@ -848,12 +860,12 @@ Deno.serve(async (req: Request) => {
   // (before classifying, so a digit isn't treated as a new intent).
   const pick = await handleReschedulePick(senderPhone, text);
   if (pick) {
-    await logToDb(pick.who, pick.action, text);
+    await log(pick.who, pick.action, text);
     try {
       await sendMetaReply(token, phoneNumberId, senderPhone, pick.reply);
-      await logToDb(pick.who, `${pick.action}_reply`, pick.reply);
+      await log(pick.who, `${pick.action}_reply`, pick.reply);
     } catch (err) {
-      await logToDb(pick.who, "auto_reply_error", (err as Error).message);
+      await log(pick.who, "auto_reply_error", (err as Error).message);
     }
     return new Response("OK", { status: 200 });
   }
@@ -861,7 +873,7 @@ Deno.serve(async (req: Request) => {
   // Is this sender a swap partner we're waiting on? (before classification)
   const partnerReply = await handleSwapPartnerReply(senderPhone, text);
   if (partnerReply) {
-    await logToDb(partnerReply.who, partnerReply.action, text);
+    await log(partnerReply.who, partnerReply.action, text);
     try {
       await sendMetaReply(
         token,
@@ -869,17 +881,13 @@ Deno.serve(async (req: Request) => {
         senderPhone,
         partnerReply.reply,
       );
-      await logToDb(
+      await log(
         partnerReply.who,
         `${partnerReply.action}_reply`,
         partnerReply.reply,
       );
     } catch (err) {
-      await logToDb(
-        partnerReply.who,
-        "auto_reply_error",
-        (err as Error).message,
-      );
+      await log(partnerReply.who, "auto_reply_error", (err as Error).message);
     }
     return new Response("OK", { status: 200 });
   }
@@ -887,16 +895,12 @@ Deno.serve(async (req: Request) => {
   // Mid-reschedule free text → availability + swap hunt (before classification).
   const availReply = await handleAvailabilityReply(senderPhone, text);
   if (availReply) {
-    await logToDb(availReply.who, availReply.action, text);
+    await log(availReply.who, availReply.action, text);
     try {
       await sendMetaReply(token, phoneNumberId, senderPhone, availReply.reply);
-      await logToDb(
-        availReply.who,
-        `${availReply.action}_reply`,
-        availReply.reply,
-      );
+      await log(availReply.who, `${availReply.action}_reply`, availReply.reply);
     } catch (err) {
-      await logToDb(availReply.who, "auto_reply_error", (err as Error).message);
+      await log(availReply.who, "auto_reply_error", (err as Error).message);
     }
     return new Response("OK", { status: 200 });
   }
@@ -905,14 +909,14 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
   let intent: Intent = "other";
   if (!apiKey) {
-    await logToDb(senderPhone, "classify_error", "missing ANTHROPIC_API_KEY");
+    await log(senderPhone, "classify_error", "missing ANTHROPIC_API_KEY");
   } else {
     try {
       intent = await classifyIntent(apiKey, text);
     } catch (err) {
       const m = (err as Error).message;
       console.error("classify failed:", m);
-      await logToDb(senderPhone, "classify_error", m);
+      await log(senderPhone, "classify_error", m);
     }
   }
 
@@ -938,7 +942,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Record the resolved action (e.g. cancel_late / cancel_reschedule / paid / other).
-  await logToDb(who, action, text);
+  await log(who, action, text);
 
   // Reply to the student in Hebrew.
   try {
@@ -951,11 +955,11 @@ Deno.serve(async (req: Request) => {
     console.log(
       `Reply (${action}) sent to ${senderPhone}. API response: ${result}`,
     );
-    await logToDb(who, `${action}_reply`, reply);
+    await log(who, `${action}_reply`, reply);
   } catch (err) {
     const msg = (err as Error).message;
     console.error("Failed to send reply:", msg);
-    await logToDb(who, "auto_reply_error", msg);
+    await log(who, "auto_reply_error", msg);
   }
 
   // Always 200 to Meta — a non-2xx triggers webhook retries and duplicate replies.
