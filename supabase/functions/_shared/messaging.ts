@@ -162,47 +162,67 @@ export function buildBillingMessage(
 // Return the ORDERED body parameters that fill {{1}}, {{2}}, … in the approved
 // WhatsApp templates. Order must match the template bodies exactly.
 
+/** The name students see as the sender (all teachers share one bot number). */
+function sender(senderName?: string | null): string {
+  return (senderName && senderName.trim()) || "המורה";
+}
+
 /**
  * Params for the `lesson_reminder` template:
- *   {{1}}=greeting, {{2}}=lessonRef, {{3}}=dayName, {{4}}=time
+ *   {{1}}=greeting, {{2}}=lessonRef, {{3}}=dayName, {{4}}=time, {{5}}=teacher
  */
 export function buildReminderParams(
   s: Student,
   role: "student" | "parent" | null,
+  senderName?: string | null,
 ): string[] {
   const { greeting, lessonRef, dayName } = getMsgParts(s, role);
-  return [greeting, lessonRef, dayName, s.lessonTime || "—"];
+  return [
+    greeting,
+    lessonRef,
+    dayName,
+    s.lessonTime || "—",
+    sender(senderName),
+  ];
 }
 
 /**
- * Params for the approved `monthly_billing` template (3 variables):
- *   {{1}}=greeting, {{2}}=count, {{3}}=total
- * (The approved template has no lesson-reference variable.)
+ * Params for the `monthly_billing` template:
+ *   {{1}}=greeting, {{2}}=count, {{3}}=total, {{4}}=teacher
  */
 export function buildBillingParams(
   s: Student,
   role: "student" | "parent" | null,
   monthlyCount: number,
+  senderName?: string | null,
 ): string[] {
   const { greeting } = getMsgParts(s, role);
   const count = monthlyCount ?? calcMonthlyLessons(s.lessonDay);
   const total = count * (s.price ?? 0);
-  return [greeting, String(count), String(total)];
+  return [greeting, String(count), String(total), sender(senderName)];
 }
 
-/** Params for the `payment_reminder` template: {{1}}=amount, {{2}}=month label. */
+/**
+ * Params for the `payment_reminder` template:
+ *   {{1}}=amount, {{2}}=month label, {{3}}=teacher
+ */
 export function buildPaymentReminderParams(
   amount: number,
   monthLabel: string,
+  senderName?: string | null,
 ): string[] {
-  return [String(amount), monthLabel];
+  return [String(amount), monthLabel, sender(senderName)];
 }
 
-/** Params for the `reschedule_confirmed` template: {{1}}=greeting, {{2}}=slot label. */
+/**
+ * Params for the `reschedule_confirmed` template:
+ *   {{1}}=greeting, {{2}}=slot label, {{3}}=teacher
+ */
 export function buildRescheduleConfirmParams(
   s: Student,
   slotText: string,
+  senderName?: string | null,
 ): string[] {
   const { greeting } = getMsgParts(s, null);
-  return [greeting, slotText];
+  return [greeting, slotText, sender(senderName)];
 }

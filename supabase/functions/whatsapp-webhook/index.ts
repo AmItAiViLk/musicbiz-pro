@@ -412,7 +412,7 @@ async function handleAvailabilityReply(
         .eq("user_id", userId),
       supabase
         .from("user_settings")
-        .select("lesson_duration_minutes")
+        .select("lesson_duration_minutes, sender_name")
         .eq("user_id", userId)
         .maybeSingle(),
     ]);
@@ -522,7 +522,13 @@ async function handleAvailabilityReply(
         partnerPhone,
         SWAP_REQUEST_TEMPLATE,
         TEMPLATE_LANG,
-        [partner.name || "היי", slotDayName(aSlot), aSlot.time],
+        [
+          partner.name || "היי",
+          slotDayName(aSlot),
+          aSlot.time,
+          (settings?.sender_name && String(settings.sender_name).trim()) ||
+            "המורה",
+        ],
       );
       await logToDb(
         partner.name || partnerPhone,
@@ -638,6 +644,15 @@ async function advanceSwapToNextCandidate(
     const token = Deno.env.get("WHAPI_TOKEN") ?? "";
     const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") ?? "";
     const aSlot = req.swap_target_slot as { day: number; time: string };
+    const { data: senderSettings } = await supabase
+      .from("user_settings")
+      .select("sender_name")
+      .eq("user_id", req.user_id)
+      .maybeSingle();
+    const senderName =
+      (senderSettings?.sender_name &&
+        String(senderSettings.sender_name).trim()) ||
+      "המורה";
     try {
       await sendTemplate(
         token,
@@ -645,7 +660,7 @@ async function advanceSwapToNextCandidate(
         nextStudent.phone || nextStudent.contact_phone,
         SWAP_REQUEST_TEMPLATE,
         TEMPLATE_LANG,
-        [nextStudent.name || "היי", slotDayName(aSlot), aSlot.time],
+        [nextStudent.name || "היי", slotDayName(aSlot), aSlot.time, senderName],
       );
     } catch (err) {
       await logToDb(

@@ -81,6 +81,20 @@ function rowToStudent(row: Record<string, any>): Student {
   };
 }
 
+// ─── Sender name (what students see; all teachers share one bot number) ─────────
+async function getSenderName(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("user_settings")
+    .select("sender_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data?.sender_name && String(data.sender_name).trim()) || "המורה";
+}
+
 // ─── Swap timeout sweep ─────────────────────────────────────────────────────────
 
 /**
@@ -142,6 +156,7 @@ async function runSwapSweep(
       })
       .eq("id", reqRow.id);
     if (partnerAuto && partner && aSlot) {
+      const senderName = await getSenderName(supabase, reqRow.user_id);
       try {
         await sendTemplate(
           metaToken,
@@ -149,7 +164,7 @@ async function runSwapSweep(
           partner.phone || partner.contact_phone,
           "swap_request",
           TEMPLATE_LANG,
-          [partner.name || "היי", slotDayName(aSlot), aSlot.time],
+          [partner.name || "היי", slotDayName(aSlot), aSlot.time, senderName],
         );
       } catch (err) {
         console.error("next-candidate contact failed:", (err as Error).message);
@@ -247,9 +262,11 @@ Deno.serve(async (req: Request) => {
       });
     }
     const student = rowToStudent(stuRow);
+    const senderName = await getSenderName(supabase, requestedUserId);
     const params = buildPaymentReminderParams(
       Number(payRow.amount) || 0,
       hebrewMonthLabel(payRow.year_month),
+      senderName,
     );
     let sent = 0;
     for (const target of resolveBillingTargets(student)) {
@@ -314,7 +331,12 @@ Deno.serve(async (req: Request) => {
     let sent = 0;
     if (stuRow) {
       const student = rowToStudent(stuRow);
-      const params = buildRescheduleConfirmParams(student, slotLabel(slot));
+      const senderName = await getSenderName(supabase, requestedUserId);
+      const params = buildRescheduleConfirmParams(
+        student,
+        slotLabel(slot),
+        senderName,
+      );
       for (const target of resolveReminderTargets(student)) {
         try {
           await sendTemplate(
@@ -367,6 +389,7 @@ Deno.serve(async (req: Request) => {
     let sent = 0;
     if (partner && aSlot) {
       const partnerPhone = partner.phone || partner.contact_phone;
+      const senderName = await getSenderName(supabase, requestedUserId);
       try {
         await sendTemplate(
           metaToken,
@@ -374,7 +397,7 @@ Deno.serve(async (req: Request) => {
           partnerPhone,
           "swap_request",
           TEMPLATE_LANG,
-          [partner.name || "היי", slotDayName(aSlot), aSlot.time],
+          [partner.name || "היי", slotDayName(aSlot), aSlot.time, senderName],
         );
         sent = 1;
       } catch (err) {
@@ -445,7 +468,12 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (!stuRow) continue;
       const student = rowToStudent(stuRow);
-      const params = buildRescheduleConfirmParams(student, slotLabel(slot));
+      const senderName = await getSenderName(supabase, requestedUserId);
+      const params = buildRescheduleConfirmParams(
+        student,
+        slotLabel(slot),
+        senderName,
+      );
       for (const target of resolveReminderTargets(student)) {
         try {
           await sendTemplate(
@@ -500,6 +528,8 @@ Deno.serve(async (req: Request) => {
 
   for (const userRow of userRows ?? []) {
     const userId: string = userRow.user_id;
+    const senderName: string =
+      (userRow.sender_name && String(userRow.sender_name).trim()) || "המורה";
 
     // Fetch students for this teacher
     const { data: studentRows, error: studentsErr } = await supabase
@@ -522,7 +552,11 @@ Deno.serve(async (req: Request) => {
         const targets = resolveReminderTargets(student);
         for (const target of targets) {
           try {
-            const params = buildReminderParams(student, target.role);
+            const params = buildReminderParams(
+              student,
+              target.role,
+              senderName,
+            );
             await sendTemplate(
               metaToken,
               phoneNumberId,
@@ -585,6 +619,7 @@ Deno.serve(async (req: Request) => {
               student,
               target.role,
               monthlyCount,
+              senderName,
             );
             await sendTemplate(
               metaToken,
