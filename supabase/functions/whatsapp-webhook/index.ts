@@ -14,7 +14,9 @@
  *                               HMAC on every POST so only Meta can trigger replies
  *
  * Optional (enables logging to tempo_automation_logs):
- *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEFAULT_USER_ID
+ *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *   (inbound messages are routed to the owning teacher by the student's phone;
+ *    the old single-teacher DEFAULT_USER_ID is no longer used)
  *
  * Webhook URL (set in Meta dashboard): POST/GET /whatsapp-webhook
  */
@@ -119,6 +121,7 @@ async function logToDb(
 
 interface StudentRow {
   id: string;
+  user_id: string; // the teacher who owns this student (multi-tenant routing)
   name: string;
   phone: string;
   contact_phone: string;
@@ -133,20 +136,25 @@ function nowInIsrael(): Date {
   );
 }
 
-/** Find the teacher's student whose phone or parent-phone matches the sender. */
+/**
+ * Find the student whose phone (or parent-phone) matches the sender — searched
+ * across ALL teachers, since every teacher shares the one service WhatsApp
+ * number. The returned row carries `user_id` = the owning teacher, which the
+ * caller uses to scope the rest of the conversation to that teacher.
+ */
 async function findStudentByPhone(
   senderPhone: string,
 ): Promise<StudentRow | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const userId = Deno.env.get("DEFAULT_USER_ID");
-  if (!supabaseUrl || !serviceKey || !userId) return null;
+  if (!supabaseUrl || !serviceKey) return null;
   try {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data } = await supabase
       .from("students")
-      .select("id, name, phone, contact_phone, lesson_day, lesson_time")
-      .eq("user_id", userId);
+      .select(
+        "id, user_id, name, phone, contact_phone, lesson_day, lesson_time",
+      );
     if (!data) return null;
     return (
       (data as StudentRow[]).find(
@@ -213,8 +221,8 @@ async function handleReschedule(
 ): Promise<{ reply: string; action: string; who: string }> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const userId = Deno.env.get("DEFAULT_USER_ID");
   const student = await findStudentByPhone(senderPhone);
+  const userId = student?.user_id; // the teacher who owns this student
   if (!supabaseUrl || !serviceKey || !userId || !student) {
     return {
       reply: "קיבלנו שתרצה לתאם מחדש. המורה יחזור אליך בהקדם 🙏",
@@ -296,7 +304,8 @@ async function handleReschedulePick(
 ): Promise<{ reply: string; action: string; who: string } | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const userId = Deno.env.get("DEFAULT_USER_ID");
+  const student = await findStudentByPhone(senderPhone);
+  const userId = student?.user_id; // the teacher who owns this student
   if (!supabaseUrl || !serviceKey || !userId) return null;
   const supabase = createClient(supabaseUrl, serviceKey);
 
@@ -351,8 +360,9 @@ async function handleAvailabilityReply(
 ): Promise<{ reply: string; action: string; who: string } | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const userId = Deno.env.get("DEFAULT_USER_ID");
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+  const student = await findStudentByPhone(senderPhone);
+  const userId = student?.user_id; // the teacher who owns this student
   if (!supabaseUrl || !serviceKey || !userId) return null;
   const supabase = createClient(supabaseUrl, serviceKey);
 
@@ -653,12 +663,12 @@ async function handleSwapPartnerReply(
 ): Promise<{ reply: string; action: string; who: string } | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const userId = Deno.env.get("DEFAULT_USER_ID");
-  if (!supabaseUrl || !serviceKey || !userId) return null;
+  if (!supabaseUrl || !serviceKey) return null;
   const supabase = createClient(supabaseUrl, serviceKey);
 
   const partner = await findStudentByPhone(senderPhone);
   if (!partner) return null;
+  const userId = partner.user_id; // the teacher who owns this student
   const { data: req } = await supabase
     .from("reschedule_requests")
     .select("*")
