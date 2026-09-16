@@ -63,7 +63,7 @@ export default function Login() {
               Tempo
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "#64748b" }}>
-              {mode === "login" ? "ברוך הבא, אמיתי" : "צור חשבון"}
+              {mode === "login" ? "ברוך הבא" : "צור חשבון"}
             </p>
           </div>
         </div>
