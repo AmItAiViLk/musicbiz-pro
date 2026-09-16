@@ -3749,6 +3749,17 @@ function SettingsView({
           )}
         </button>
       </form>
+
+      <p className="text-xs text-slate-500 pt-2">
+        <a
+          href="/privacy.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-600 hover:underline font-semibold"
+        >
+          מדיניות פרטיות
+        </a>
+      </p>
     </div>
   );
 }

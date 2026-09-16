@@ -225,6 +225,18 @@ export default function Login() {
             </button>
           </p>
         </div>
+
+        <p className="text-center text-xs" style={{ color: "#94a3b8" }}>
+          <a
+            href="/privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors"
+            style={{ color: "#818cf8" }}
+          >
+            מדיניות פרטיות
+          </a>
+        </p>
       </div>
     </div>
   );
