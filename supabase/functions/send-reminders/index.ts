@@ -46,7 +46,7 @@ function nowIsrael(): Date {
 // ─── Meta WhatsApp template config ──────────────────────────────────────────────
 // One central Meta number/token is used for all sends during the single-teacher phase.
 // Template names must EXACTLY match the approved names in WhatsApp Manager.
-const REMINDER_TEMPLATE = "lesson_reminderlesson_reminder";
+const REMINDER_TEMPLATE = "lesson_reminder";
 const BILLING_TEMPLATE = "monthly_billing";
 const PAYMENT_REMINDER_TEMPLATE = "payment_reminder";
 const RESCHEDULE_CONFIRMED_TEMPLATE = "reschedule_confirmed";

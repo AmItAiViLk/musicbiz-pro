@@ -83,7 +83,7 @@ export function resolveReminderTargets(s: Student): WaTarget[] {
 
   // Fallback: if no toggles produced a target, send to any available phone
   if (targets.length === 0) {
-    const phone = s.phone || s.contactPhone;
+    const phone = s.contactPhone || s.phone;
     if (phone)
       targets.push({
         phone,
@@ -115,7 +115,7 @@ export function resolveBillingTargets(s: Student): WaTarget[] {
 
   // Fallback: if no toggles produced a target, send to any available phone
   if (targets.length === 0) {
-    const phone = s.phone || s.contactPhone;
+    const phone = s.contactPhone || s.phone;
     if (phone)
       targets.push({
         phone,

@@ -3536,7 +3536,7 @@ function SettingsView({
                 Calendar Bot — שיבוץ עצמי
               </p>
               <p className="text-xs text-slate-500 mt-0.5">
-                תלמידים מבקשים מועד דרך WhatsApp → הבוט בודק יומן → אמיתי מאשר
+                תלמידים מבקשים מועד דרך WhatsApp → הבוט בודק יומן → אתה מאשר
               </p>
             </div>
             {calendarBotConnected ? (
@@ -3557,16 +3557,18 @@ function SettingsView({
               שעות עבודה לפי הגדרת זמינות
             </p>
             <p>• הבוט מציע 3–4 מועדים פנויים בלבד לפי יומן Google</p>
-            <p>• אחרי בחירת תלמיד — Amitai מקבל WhatsApp עם "אשר" / "דחה"</p>
+            <p>• אחרי בחירת תלמיד — תקבל WhatsApp עם "אשר" / "דחה"</p>
             <p>• אישור יוצר אירוע ביומן ושולח אישור לתלמיד אוטומטית</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
+              disabled={!import.meta.env.VITE_CALENDAR_BOT_CLIENT_ID}
               onClick={() => {
                 const calBotClientId = import.meta.env
                   .VITE_CALENDAR_BOT_CLIENT_ID;
+                if (!calBotClientId) return; // not configured — avoid a broken OAuth redirect
                 const params = new URLSearchParams({
                   client_id: calBotClientId,
                   redirect_uri: window.location.origin,
@@ -3577,7 +3579,7 @@ function SettingsView({
                 });
                 window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
               }}
-              className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+              className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
             >
               <svg
                 className="w-4 h-4"
@@ -4179,56 +4181,11 @@ export default function App({ user }) {
           .order("start_time"),
       ]);
 
-      // ── One-time migration from localStorage ──────────────────────────────
-      if (studentsData && studentsData.length === 0) {
-        try {
-          const raw = localStorage.getItem("musicpro_students");
-          const local = raw ? JSON.parse(raw) : [];
-          if (local.length > 0) {
-            // Assign UUIDs if IDs are old numeric timestamps
-            const migrated = local.map((s) => ({
-              ...s,
-              id:
-                typeof s.id === "string" && s.id.includes("-")
-                  ? s.id
-                  : crypto.randomUUID(),
-              googleEventId: s.googleEventId || null,
-              avatar: s.avatar || getInitials(s.name),
-            }));
-            await supabase
-              .from("students")
-              .insert(migrated.map((s) => studentToDb(s, user.id)));
-            setStudents(migrated);
-            localStorage.removeItem("musicpro_students");
-            setSyncMsg({
-              type: "success",
-              text: `✓ ${migrated.length} תלמידים יובאו מהדפדפן לענן בהצלחה`,
-            });
-            setTimeout(() => setSyncMsg(null), 5000);
-            setLoading(false);
-            // Also migrate settings
-            const rawSettings = localStorage.getItem("musicpro_settings");
-            if (rawSettings) {
-              const localSettings = JSON.parse(rawSettings);
-              setSettings(localSettings);
-              await supabase.from("user_settings").upsert(
-                {
-                  user_id: user.id,
-                  google_calendar_key: localSettings.googleCalendarKey || "",
-                  google_client_id: localSettings.googleClientId || "",
-                  morning_key: localSettings.morningKey || "",
-                  morning_secret: localSettings.morningSecret || "",
-                },
-                { onConflict: "user_id" },
-              );
-              localStorage.removeItem("musicpro_settings");
-            }
-            return;
-          }
-        } catch {
-          /* migration failed silently, continue with empty state */
-        }
-      }
+      // NOTE: an earlier build migrated students/settings from browser
+      // localStorage (the pre-Supabase prototype) into the account on first
+      // load. That path was removed: in the multi-tenant SaaS it could import
+      // a stale browser's data into a different teacher's fresh account, and it
+      // offers nothing to new teachers who never had prototype data.
 
       if (studentsData) setStudents(studentsData.map(dbToStudent));
       if (settingsData)
@@ -4399,8 +4356,9 @@ export default function App({ user }) {
   // ── Settings save ─────────────────────────────────────────────────────────
 
   async function saveSettings(newSettings) {
+    const prev = settings;
     setSettings(newSettings);
-    await supabase.from("user_settings").upsert(
+    const { error } = await supabase.from("user_settings").upsert(
       {
         user_id: user.id,
         google_calendar_key: newSettings.googleCalendarKey,
@@ -4415,22 +4373,38 @@ export default function App({ user }) {
       },
       { onConflict: "user_id" },
     );
+    if (error) {
+      setSettings(prev);
+      setSyncMsg({ type: "error", text: "שמירת ההגדרות נכשלה — נסה שוב" });
+      setTimeout(() => setSyncMsg(null), 4000);
+    }
   }
 
   // ── Availability save ─────────────────────────────────────────────────────
 
   async function saveAvailability(windows) {
     setAvailability(windows);
-    await supabase.from("teacher_availability").delete().eq("user_id", user.id);
-    if (windows.length > 0) {
-      await supabase.from("teacher_availability").insert(
+    const { error: delErr } = await supabase
+      .from("teacher_availability")
+      .delete()
+      .eq("user_id", user.id);
+    let insErr = null;
+    if (!delErr && windows.length > 0) {
+      ({ error: insErr } = await supabase.from("teacher_availability").insert(
         windows.map((w) => ({
           user_id: user.id,
           day_of_week: w.day_of_week,
           start_time: w.start_time,
           end_time: w.end_time,
         })),
-      );
+      ));
+    }
+    if (delErr || insErr) {
+      setSyncMsg({
+        type: "error",
+        text: "שמירת שעות הזמינות נכשלה — נסה שוב",
+      });
+      setTimeout(() => setSyncMsg(null), 4000);
     }
   }
 
@@ -4444,7 +4418,14 @@ export default function App({ user }) {
 
   async function addStudent(student) {
     setStudents((prev) => [...prev, student]);
-    await supabase.from("students").insert(studentToDb(student, user.id));
+    const { error } = await supabase
+      .from("students")
+      .insert(studentToDb(student, user.id));
+    if (error) {
+      setStudents((prev) => prev.filter((s) => s.id !== student.id));
+      setSyncMsg({ type: "error", text: "שמירת התלמיד נכשלה — נסה שוב" });
+      setTimeout(() => setSyncMsg(null), 4000);
+    }
   }
 
   async function addStudents(partialList) {
@@ -4469,9 +4450,16 @@ export default function App({ user }) {
       nextLesson: null,
     }));
     setStudents((prev) => [...prev, ...newStudents]);
-    await supabase
+    const { error } = await supabase
       .from("students")
       .insert(newStudents.map((s) => studentToDb(s, user.id)));
+    if (error) {
+      const ids = new Set(newStudents.map((s) => s.id));
+      setStudents((prev) => prev.filter((s) => !ids.has(s.id)));
+      setSyncMsg({ type: "error", text: "הוספת התלמידים נכשלה — נסה שוב" });
+      setTimeout(() => setSyncMsg(null), 4000);
+      return;
+    }
     setSyncMsg({
       type: "success",
       text: `✓ ${newStudents.length} תלמידים נוספו`,
@@ -4553,9 +4541,16 @@ export default function App({ user }) {
     }));
     if (newStudents.length === 0) return;
     setStudents((prev) => [...prev, ...newStudents]);
-    await supabase
+    const { error } = await supabase
       .from("students")
       .insert(newStudents.map((s) => studentToDb(s, user.id)));
+    if (error) {
+      const ids = new Set(newStudents.map((s) => s.id));
+      setStudents((prev) => prev.filter((s) => !ids.has(s.id)));
+      setSyncMsg({ type: "error", text: "ייבוא התלמידים נכשל — נסה שוב" });
+      setTimeout(() => setSyncMsg(null), 4000);
+      return;
+    }
     setSyncMsg({
       type: "success",
       text: `✓ ${newStudents.length} תלמידים יובאו מ-Google Calendar`,
@@ -4564,22 +4559,36 @@ export default function App({ user }) {
   }
 
   async function saveEditedStudent(data) {
+    const prev = editingStudent;
     const updated = { ...editingStudent, ...data };
-    setStudents((prev) =>
-      prev.map((s) => (s.id === editingStudent.id ? updated : s)),
-    );
+    setStudents((list) => list.map((s) => (s.id === prev.id ? updated : s)));
     setEditingStudent(null);
-    await supabase
+    const { error } = await supabase
       .from("students")
       .update(studentToDb(updated, user.id))
-      .eq("id", updated.id);
+      .eq("id", updated.id)
+      .eq("user_id", user.id);
+    if (error) {
+      setStudents((list) => list.map((s) => (s.id === prev.id ? prev : s)));
+      setSyncMsg({ type: "error", text: "עדכון התלמיד נכשל — נסה שוב" });
+      setTimeout(() => setSyncMsg(null), 4000);
+    }
   }
 
   async function deleteStudent() {
-    const id = editingStudent.id;
+    const removed = editingStudent;
     setEditingStudent(null);
-    setStudents((prev) => prev.filter((s) => s.id !== id));
-    await supabase.from("students").delete().eq("id", id);
+    setStudents((prev) => prev.filter((s) => s.id !== removed.id));
+    const { error } = await supabase
+      .from("students")
+      .delete()
+      .eq("id", removed.id)
+      .eq("user_id", user.id);
+    if (error) {
+      setStudents((prev) => [...prev, removed]);
+      setSyncMsg({ type: "error", text: "מחיקת התלמיד נכשלה — נסה שוב" });
+      setTimeout(() => setSyncMsg(null), 4000);
+    }
   }
 
   // ── Contact Picker sync ────────────────────────────────────────────────────
